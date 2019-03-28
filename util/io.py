@@ -43,4 +43,3 @@ def load_data(filename):
 def copy(fn_src, fn_tar):
     shutil.copyfile(fn_src, fn_tar)
 
-
