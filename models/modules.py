@@ -215,8 +215,289 @@ class CalcGradNorm(object):
         self.grad_list = new_grad_list
         return grad_norm.detach()
         
-    
 
+
+###############################################################################
+# losses
+###############################################################################
+class GANLoss(nn.Module):
+    def __init__(self, use_lsgan=True, target_real_label=1.0, target_fake_label=0.0):
+        super(GANLoss, self).__init__()
+        self.register_buffer('real_label', torch.tensor(target_real_label))
+        self.register_buffer('fake_label', torch.tensor(target_fake_label))
+        if use_lsgan:
+            self.loss = F.mse_loss
+        else:
+            self.loss = F.binary_cross_entropy
+    
+    def get_target_tensor(self, input, target_is_real):
+        if target_is_real:
+            target_tensor = self.real_label
+        else:
+            target_tensor = self.fake_label
+        return target_tensor.expand_as(input)
+
+    def forward(self, input, target_is_real):
+        target_tensor = self.get_target_tensor(input, target_is_real)
+        return self.loss(input, target_tensor)
+
+
+class VGGLoss(nn.Module):
+    def __init__(self, gpu_ids, content_weights = [1.0/32, 1.0/16, 1.0/8, 1.0/4, 1.0], style_weights=[1.,1.,1.,1.,1.],shifted_style=False):
+        super(VGGLoss, self).__init__()
+        self.gpu_ids = gpu_ids
+        self.shifted_style = shifted_style
+        self.content_weights = content_weights
+        self.style_weights = style_weights
+        self.shift_delta = [[0,2,4,8,16], [0,2,4,8], [0,2,4], [0,2], [0]]
+        # self.style_weights = [0,0,1,0,0] # use relu-3 layer feature to compure style loss
+        # define vgg
+        vgg_pretrained_features = torchvision.models.vgg19(pretrained=True).features
+        self.slice1 = torch.nn.Sequential()
+        self.slice2 = torch.nn.Sequential()
+        self.slice3 = torch.nn.Sequential()
+        self.slice4 = torch.nn.Sequential()
+        self.slice5 = torch.nn.Sequential()
+        for x in range(2):
+            self.slice1.add_module(str(x), vgg_pretrained_features[x]) # relu1_1
+        for x in range(2, 7):
+            self.slice2.add_module(str(x), vgg_pretrained_features[x]) # relu2_1
+        for x in range(7, 12):
+            self.slice3.add_module(str(x), vgg_pretrained_features[x]) # relu3_1
+        for x in range(12, 21):
+            self.slice4.add_module(str(x), vgg_pretrained_features[x]) # relu4_1
+        for x in range(21, 30):
+            self.slice5.add_module(str(x), vgg_pretrained_features[x]) # relu5_1
+        for param in self.parameters():
+            param.requires_grad = False
+
+        if len(gpu_ids) > 0:
+            self.cuda()
+
+    def compute_feature(self, X):
+        h_relu1 = self.slice1(X)
+        h_relu2 = self.slice2(h_relu1)
+        h_relu3 = self.slice3(h_relu2)
+        h_relu4 = self.slice4(h_relu3)
+        h_relu5 = self.slice5(h_relu4)
+        out = [h_relu1, h_relu2, h_relu3, h_relu4, h_relu5]
+        return out
+
+    def forward(self, X, Y, mask=None, loss_type='content', device_mode=None):
+        '''
+        loss_type: 'content', 'style'
+        device_mode: multi, single, sub
+        '''
+        bsz = X.size(0)
+        if device_mode is None:
+            device_mode = 'multi' if len(self.gpu_ids) > 1 else 'single'
+
+        if device_mode == 'multi':
+            if mask is None:
+                return nn.parallel.data_parallel(self, (X, Y), module_kwargs={'loss_type': loss_type, 'device_mode': 'sub', 'mask': None}).mean(dim=0)
+            else:
+                return nn.parallel.data_parallel(self, (X, Y, mask), module_kwargs={'loss_type': loss_type, 'device_mode': 'sub'}).mean(dim=0)
+        else:
+            features_x = self.compute_feature(self.normalize(X))
+            features_y = self.compute_feature(self.normalize(Y))
+            if mask is not None:
+                features_x = [feat * F.adaptive_max_pool2d(mask, (feat.size(2), feat.size(3))) for feat in features_x]
+                features_y = [feat * F.adaptive_max_pool2d(mask, (feat.size(2), feat.size(3))) for feat in features_y]
+
+            # compute content loss
+            if loss_type == 'content':
+                loss = 0
+                for i, (feat_x, feat_y) in enumerate(zip(features_x, features_y)):
+                    loss += self.content_weights[i] * F.l1_loss(feat_x, feat_y, reduce=False).view(bsz, -1).mean(dim=1)
+            # compute style loss
+            if loss_type == 'style':
+                loss = 0
+                if self.shifted_style:
+                    # with cross_correlation
+                    for i, (feat_x, feat_y) in enumerate(zip(features_x, features_y)):
+                        if self.style_weights[i] > 0:
+                            for delta in self.shift_delta[i]:
+                                if delta == 0:
+                                    loss += self.style_weights[i] * F.mse_loss(self.gram_matrix(feat_x), self.gram_matrix(feat_y), reduce=False).view(bsz, -1).sum(dim=1)
+                                else:
+                                    loss += 0.5*self.style_weights[i] * \
+                                            (F.mse_loss(self.shifted_gram_matrix(feat_x, delta, 0), self.shifted_gram_matrix(feat_y, delta, 0), reduce=False) \
+                                            +F.mse_loss(self.shifted_gram_matrix(feat_x, 0, delta), self.shifted_gram_matrix(feat_y, 0, delta), reduce=False)).view(bsz, -1).sum(dim=1)
+                else:
+                    # without cross_correlation
+                    for i, (feat_x, feat_y) in enumerate(zip(features_x, features_y)):
+                        if self.style_weights[i] > 0:
+                            loss += self.style_weights[i] * F.mse_loss(self.gram_matrix(feat_x), self.gram_matrix(feat_y), reduce=False).view(bsz, -1).sum(dim=1)
+                            # loss += self.style_weights[i] * ((self.gram_matrix(feat_x) - self.gram_matrix(feat_y))**2).view(bsz, -1).mean(dim=1)
+                
+            if device_mode == 'single':
+                loss = loss.mean(dim=0)
+            return loss
+
+    def normalize(self, x):
+        # normalization parameters of input
+        mean_1 = x.new([0.5, 0.5, 0.5]).view(1,3,1,1)
+        std_1 = x.new([0.5, 0.5, 0.5]).view(1,3,1,1)
+        # normalization parameters of output
+        mean_2 = x.new([0.485, 0.456, 0.406]).view(1,3,1,1)
+        std_2 = x.new([0.229, 0.224, 0.225]).view(1,3,1,1)
+
+        return (x*std_1 + mean_1 - mean_2)/std_2
+
+    def gram_matrix(self, feat):
+        bsz, c, h, w = feat.size()
+        feat = feat.view(bsz, c, h*w)
+        feat_T = feat.transpose(1,2)
+        g = torch.matmul(feat, feat_T) / (c*h*w)
+        return g
+
+    def shifted_gram_matrix(self, feat, shift_x, shift_y):
+        bsz, c, h, w = feat.size()
+        assert shift_x<w and shift_y<h
+        feat1 = feat[:,:,shift_y:, shift_x:].contiguous().view(bsz, c, -1)
+        feat2 = feat[:,:,:(h-shift_y),:(w-shift_x)].contiguous().view(bsz, c, -1)
+        g = torch.matmul(feat1, feat2.transpose(1,2)) / (c*h*w)
+        return g
+
+def EPE(input_flow, target_flow, vis_mask):
+    '''
+    compute endpoint-error
+    input_flow: (N,C=2,H,W)
+    target_flow: (N,C=2,H,W)
+    vis_mask: (N,1,H,W)
+    '''
+    # return (torch.norm(target_flow-input_flow, p=2, dim=1) * vis_mask).mean()
+    bsz = input_flow.size(0)
+    epe = (target_flow - input_flow).norm(dim=1, p=2, keepdim=True) * vis_mask #(N, 1, H, W)
+    count = vis_mask.view(bsz,-1).sum(dim=1, keepdim=True) #(N, 1)
+    return (epe.view(bsz,-1) / (count*bsz+1e-8)).sum()
+
+def L1(input_flow, target_flow, vis_mask):
+    '''
+    compute l1-loss
+    input_flow: (N,C=2,H,W)
+    target_flow: (N,C=2,H,W)
+    vis_mask: (N,1,H,W)
+    '''
+    bsz = input_flow.size(0)
+    err = (target_flow-input_flow).abs() * vis_mask #(N, 2, H, W)
+    count = vis_mask.view(bsz,-1).sum(dim=1, keepdim=True) #(N, 1)
+    return (err.view(bsz,-1) / (count*bsz*2+1e-8)).sum()
+
+def L2(input_flow, target_flow, vis_mask):
+    '''
+    compute l1-loss
+    input_flow: (N,C=2,H,W)
+    target_flow: (N,C=2,H,W)
+    vis_mask: (N,1,H,W)
+    '''
+    bsz=  input_flow.size(0)
+    err = (target_flow-input_flow).norm(dim=1, p=2, keepdim=True)  * vis_mask
+    count = vis_mask.view(bsz,-1).sum(dim=1, keepdim=True) #(N, 1)
+    return (err.view(bsz,-1) / (count*bsz + 1e-8)).sum()
+
+
+
+class MultiScaleFlowLoss(nn.Module):
+    def __init__(self, start_scale=2, num_scale=5, loss_type='l1'):
+        super(MultiScaleFlowLoss, self).__init__()
+        self.start_scale = start_scale
+        self.num_scale = num_scale
+        self.loss_type = loss_type
+        self.loss_weights = [0.005, 0.01, 0.02, 0.08, 0.32] + [0.32]*(num_scale-5)
+        self.div_flow = 0.05 # follow flownet and pwc net, but don't konw the reason
+        self.avg_pools = [nn.AvgPool2d(self.start_scale*(2**scale), self.start_scale*(2**scale)) for scale in range(num_scale)]
+        self.max_pools = [nn.MaxPool2d(self.start_scale*(2**scale), self.start_scale*(2**scale)) for scale in range(num_scale)]
+        if loss_type == 'l1':
+            self.loss_func = L1
+        elif loss_type == 'l2':
+            self.loss_func = L2
+        
+    def forward(self, input_flows, target_flow, vis_mask, output_full_losses=False):
+        loss = 0
+        epe = 0
+        full_losses = []
+        target_flow = self.div_flow * target_flow
+        for i, input_ in enumerate(input_flows):
+            # for pytorch v0.4.0 and earlier
+            target_ = self.avg_pools[i](target_flow)
+            mask_ = self.max_pools[i](vis_mask)
+            assert input_.is_same_size(target_), 'scale %d size mismatch: input(%s) vs. target(%s)' % (i, input_.size(), target_.size())
+            loss_i = self.loss_func(input_, target_, mask_)
+            loss += self.loss_weights[i] * loss_i
+            epe +=  self.loss_weights[i] * EPE(input_, target_, mask_)
+            full_losses = full_losses + [loss_i]
+        if output_full_losses:
+            return loss, epe, full_losses
+        else:
+            return loss, epe
+
+
+###############################################################################
+# image similarity metrics
+###############################################################################
+class PSNR(nn.Module):
+    def forward(self, images_1, images_2):
+        numpy_imgs_1 = images_1.data.cpu().numpy().transpose(0,2,3,1)
+        numpy_imgs_1 = ((numpy_imgs_1 + 1.0) * 127.5).clip(0,255).astype(np.uint8)
+        numpy_imgs_2 = images_2.data.cpu().numpy().transpose(0,2,3,1)
+        numpy_imgs_2 = ((numpy_imgs_2 + 1.0) * 127.5).clip(0,255).astype(np.uint8)
+
+        psnr_score = []
+        for img_1, img_2 in zip(numpy_imgs_1, numpy_imgs_2):
+            psnr_score.append(compare_psnr(img_2, img_1))
+
+        return Variable(images_1.data.new(1).fill_(np.mean(psnr_score)))
+
+
+class SSIM(nn.Module):
+    def forward(self, images_1, images_2):
+        numpy_imgs_1 = images_1.data.cpu().numpy().transpose(0,2,3,1)
+        numpy_imgs_1 = ((numpy_imgs_1 + 1.0) * 127.5).clip(0,255).astype(np.uint8)
+        numpy_imgs_2 = images_2.data.cpu().numpy().transpose(0,2,3,1)
+        numpy_imgs_2 = ((numpy_imgs_2 + 1.0) * 127.5).clip(0,255).astype(np.uint8)
+
+        ssim_score = []
+        for img_1, img_2 in zip(numpy_imgs_1, numpy_imgs_2):
+            ssim_score.append(compare_ssim(img_1, img_2, multichannel=True))
+
+        return Variable(images_1.data.new(1).fill_(np.mean(ssim_score)))
+
+
+
+###############################################################################
+# flow-based warping
+###############################################################################
+def warp_acc_flow(x, flow, mode='bilinear', mask=None, mask_value=-1):
+    '''
+    warp an image/tensor according to given flow.
+    Input:
+        x: (bsz, c, h, w)
+        flow: (bsz, c, h, w)
+        mask: (bsz, 1, h, w). 1 for valid region and 0 for invalid region. invalid region will be fill with "mask_value" in the output images.
+    Output:
+        y: (bsz, c, h, w)
+    '''
+    bsz, c, h, w = x.size()
+    # mesh grid
+    xx = x.new_tensor(range(w)).view(1,-1).repeat(h,1)
+    yy = x.new_tensor(range(h)).view(-1,1).repeat(1,w)
+    xx = xx.view(1,1,h,w).repeat(bsz,1,1,1)
+    yy = yy.view(1,1,h,w).repeat(bsz,1,1,1)
+    grid = torch.cat((xx,yy), dim=1).float()
+    grid = grid + flow
+    # scale to [-1, 1]
+    grid[:,0,:,:] = 2.0*grid[:,0,:,:]/max(w-1,1) - 1.0
+    grid[:,1,:,:] = 2.0*grid[:,1,:,:]/max(h-1,1) - 1.0
+
+    grid = grid.permute(0,2,3,1)
+    output = F.grid_sample(x, grid, mode=mode, padding_mode='zeros')
+    # mask = F.grid_sample(x.new_ones(x.size()), grid)
+    # mask = torch.where(mask<0.9999, mask.new_zeros(1), mask.new_ones(1))
+    # return output * mask
+    if mask is not None:
+        output = torch.where(mask>0.5, output, output.new_ones(1).mul_(mask_value))
+    return output
 
 ###############################################################################
 # layers
