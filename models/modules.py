@@ -432,6 +432,37 @@ class MultiScaleFlowLoss(nn.Module):
         else:
             return loss, epe
 
+class SS_FlowLoss(nn.Module):
+    '''
+    segmentation sensitive flow loss
+    this loss function only penalize pixels where the flow points to a wrong segmentation area
+    '''
+    def __init__(self, loss_type='l1'):
+        super(SS_FlowLoss, self).__init__()
+        self.div_flow = 0.05
+        self.loss_type = loss_type
+    
+    def forward(self, input_flow, target_flow, seg_1, seg_2, vis_2):
+        '''
+        input_flow: (bsz, 2, h, w)
+        target_flow: (bsz, 2, h, w) note that there is scale factor between input_flow and target_flow, which is self.div_flow
+        seg_1, seg_2: (bsz, ns, h, w) channel-0 should be background
+        vis_2: (bsz, 1, h, w) visibility map of image_2
+        '''
+        with torch.no_grad():
+            seg_1 = seg_1[:,1::,...]
+            seg_2 = seg_2[:,1::,...] # doesn't consider background
+            seg_1w = warp_acc_flow(seg_1, input_flow)
+            seg_1w = (seg_1w>0).float()
+            mask = (seg_2*(1-seg_1w)).sum(dim=1, keepdim=True)
+            mask = mask * (vis_2==0).float()
+        err = (input_flow - target_flow).mul(self.div_flow) * mask
+        if self.loss_type == 'l1':
+            loss = err.abs().mean()
+        elif self.loss_type == 'l2':
+            loss = err.norm(p=2,dim=1).mean()
+        return loss
+    
 
 ###############################################################################
 # image similarity metrics
