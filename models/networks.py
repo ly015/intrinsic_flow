@@ -476,7 +476,21 @@ class FlowUnetSkipConnectionBlock(nn.Module):
             x_, x_pyramid, flow_pyramid = self.submodule(x_)
             x_ = self.up(x_)
             x_out = x_
-        elif self.
+        elif self.innermost:
+            x_pyramid = []
+            flow_pyramid = []
+            x_ = self.up(self.down(x))
+            x_out = torch.cat((x, x_), dim=1)
+        else:
+            x_ = self.down(x)
+            x_, x_pyramid, flow_pyramid = self.submodule(x_)
+            x_ = self.up(x_)
+            x_out = torch.cat((x, x_), dim=1)
+        
+        flow = self.predict_flow(x_)
+        x_pyramid = [x_] + x_pyramid
+        flow_pyramid = [flow] + flow_pyramid
+        return x_out, x_pyramid, flow_pyramid
 
 class FlowUnet(nn.Module):
     def __init__(self, input_nc, nf=16, start_scale=2, num_scale=5, norm='batch', gpu_ids=[], max_nf=512):
