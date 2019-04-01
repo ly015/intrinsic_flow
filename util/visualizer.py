@@ -11,7 +11,7 @@ from util.pavi import PaviClient
 from options.base_options import opt_to_str
 import numpy as np
 from collections import OrderedDict
-from misc import pose_util, flow_util
+from util import pose_util, flow_util
 
 
 def seg_to_rgb(seg_map, with_face=False):

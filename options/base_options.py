@@ -66,7 +66,7 @@ class BaseOptions(object):
         # display options
         if display:
             print('------------ Options -------------')
-            for k, v in sorted(args.items()):
+            for k, v in sorted(vars(self.opt).items()):
                 print('%s: %s' % (str(k), str(v)))
             print('-------------- End ----------------')
         return self.opt

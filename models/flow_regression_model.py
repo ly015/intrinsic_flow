@@ -17,8 +17,8 @@ class FlowRegressionModel(BaseModel):
         # define flow networks
         ###################################
         if opt.which_model == 'unet':
-            self.netF = networks_flow.FlowUnet(
-                input_nc = self.get_input_dim(opt.input_type1) + self.get_input_dim(opt.input_type2) + (opt.priori_nc if opt.use_flow_priori else 0),
+            self.netF = networks.FlowUnet(
+                input_nc = self.get_input_dim(opt.input_type1) + self.get_input_dim(opt.input_type2),
                 nf = opt.nf,
                 start_scale = opt.start_scale,
                 num_scale = opt.num_scale,
@@ -26,8 +26,8 @@ class FlowRegressionModel(BaseModel):
                 gpu_ids = opt.gpu_ids,
             )
         elif opt.which_model == 'unet_v2':
-            self.netF = networks_flow.FlowUnet_v2(
-                input_nc = self.get_input_dim(opt.input_type1) + self.get_input_dim(opt.input_type2) + (opt.priori_nc if opt.use_flow_priori else 0),
+            self.netF = networks.FlowUnet_v2(
+                input_nc = self.get_input_dim(opt.input_type1) + self.get_input_dim(opt.input_type2),
                 nf = opt.nf,
                 max_nf = opt.max_nf,
                 start_scale = opt.start_scale,
@@ -37,14 +37,14 @@ class FlowRegressionModel(BaseModel):
             )
         if opt.gpu_ids:
             self.netF.cuda()
-        networks_flow.init_weights(self.netF, init_type=opt.init_type)
+        networks.init_weights(self.netF, init_type=opt.init_type)
         ###################################
         # loss and optimizers
         ###################################
-        self.crit_flow = networks_flow.MultiScaleFlowLoss(start_scale=opt.start_scale, num_scale=opt.num_scale, loss_type=opt.flow_loss_type)
+        self.crit_flow = networks.MultiScaleFlowLoss(start_scale=opt.start_scale, num_scale=opt.num_scale, loss_type=opt.flow_loss_type)
         self.crit_vis = nn.CrossEntropyLoss() #(0-visible, 1-invisible, 2-background)
         if opt.use_ss_flow_loss:
-            self.crit_flow_ss = networks_flow.SS_FlowLoss(loss_type='l1')
+            self.crit_flow_ss = networks.SS_FlowLoss(loss_type='l1')
         if self.is_train:
             self.optimizers = []
             params = []
@@ -73,7 +73,7 @@ class FlowRegressionModel(BaseModel):
         if self.is_train:
             self.schedulers = []
             for optim in self.optimizers:
-                self.schedulers.append(networks_flow.get_scheduler(optim, opt))
+                self.schedulers.append(networks.get_scheduler(optim, opt))
         
     def set_input(self, data):
         input_list = [
@@ -129,7 +129,7 @@ class FlowRegressionModel(BaseModel):
         # visibility loss
         self.output['loss_vis'] = self.crit_vis(self.output['vis_out'], self.output['vis_tar'].long().squeeze(dim=1))
         # EPE
-        self.output['EPE'] = networks_flow.EPE(self.output['flow_out'], self.output['flow_tar'], self.output['mask_tar'])
+        self.output['EPE'] = networks.EPE(self.output['flow_out'], self.output['flow_tar'], self.output['mask_tar'])
    
     def backward(self, check_grad=False):
         
@@ -141,7 +141,7 @@ class FlowRegressionModel(BaseModel):
                 loss += self.output['loss_flow_ss'] * self.opt.loss_weight_flow_ss
             loss.backward()
         else:
-            with networks_flow.CalcGradNorm(self.netF) as cgn:
+            with networks.CalcGradNorm(self.netF) as cgn:
                 (self.output['loss_flow']*self.opt.loss_weight_flow).backward(retain_graph=True)
                 self.output['grad_flow'] = cgn.get_grad_norm()                        
                 (self.output['loss_vis'] * self.opt.loss_weight_vis).backward(retain_graph=True)
