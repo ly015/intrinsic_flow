@@ -31,10 +31,9 @@ visualizer = FlowVisualizer(opt)
 loss_buffer = LossBuffer(size=len(val_loader))
 model.output = {}
 model.eval()
-nbatch = opt.nbatch if opt.nbatch >= 0 else len(val_loader)
 
-for i, data in enumerate(tqdm.tqdm(val_loader, desc='Test', total=nbatch)):
-    if i == nbatch:
+for i, data in enumerate(tqdm.tqdm(val_loader, desc='Test', total=len(val_loader))):
+    if i == len(val_loader):
         break
     model.set_input(data)
     model.test(compute_loss=True)

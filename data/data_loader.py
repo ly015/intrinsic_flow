@@ -22,7 +22,7 @@ def CreateDataLoader(opt, split='test'):
 def CreateDataset(opt, split):
     dataset = None
     if opt.dataset_type == 'flow':
-        from data.flow3d_dataset import Flow3dDataset as DatasetClass
+        from data.flow_dataset import FlowDataset as DatasetClass
     elif opt.dataset_type == 'general_pair':
         from data.general_pair_dataset import GeneralPairDataset as DatasetClass
     else:

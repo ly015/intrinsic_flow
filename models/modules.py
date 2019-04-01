@@ -122,11 +122,8 @@ def get_scheduler(optimizer, opt):
             return lr_l
         scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda_rule)
     elif opt.lr_policy == 'step':
-        if opt.continue_train:
-            try:
-                last_epoch = int(opt.which_epoch) - 1
-            except:
-                last_epoch = int(opt.last_epoch) -1
+        if opt.resume_train:
+            last_epoch = int(opt.last_epoch) -1 
         else:
             last_epoch = -1
         scheduler = lr_scheduler.StepLR(optimizer, step_size=opt.lr_decay, gamma=opt.lr_gamma, last_epoch=last_epoch)

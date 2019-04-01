@@ -7,8 +7,7 @@ import numpy as np
 import os
 import util.io as io
 from util.image import imshow
-from misc import flow_util
-from misc import pose_util
+from util import flow_util, pose_util
 import skimage.transform
 import skimage.measure
 
@@ -153,7 +152,7 @@ class FlowDataset(BaseDataset):
         seg_label_1 = self.read_seg(sid1)
         seg_label_2 = self.read_seg(sid2)
         joint_c_1 = np.array(self.pose_label[sid1])
-        joint_c_2 = np.array(self.pose_label2[sid2])
+        joint_c_2 = np.array(self.pose_label[sid2])
         corr_2to1, vis_2 = self.read_corr(sid1, sid2)
         vis_2 = vis_2[...,np.newaxis] #(H,W,1) uint8
         flow_2to1 = flow_util.corr_to_flow(corr_2to1, vis_2, order='HWC')
@@ -187,8 +186,8 @@ class FlowDataset(BaseDataset):
         ######################
         # create pose representation
         ######################
-        joint_1 = kp_to_map(img_sz=(img_1.shape[1], img_1.shape[0]), label=joint_c_1, mode=self.opt.joint_mode, radius=self.opt.joint_radius)
-        joint_2 = kp_to_map(img_sz=(img_2.shape[1], img_2.shape[0]), label=joint_c_2, mode=self.opt.joint_mode, radius=self.opt.joint_radius)
+        joint_1 = kp_to_map(img_sz=(img_1.shape[1], img_1.shape[0]), kps=joint_c_1, mode=self.opt.joint_mode, radius=self.opt.joint_radius)
+        joint_2 = kp_to_map(img_sz=(img_2.shape[1], img_2.shape[0]), kps=joint_c_2, mode=self.opt.joint_mode, radius=self.opt.joint_radius)
         ######################
         # create seg representation
         ######################

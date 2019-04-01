@@ -22,7 +22,7 @@ class FlowRegressionModel(BaseModel):
                 nf = opt.nf,
                 start_scale = opt.start_scale,
                 num_scale = opt.num_scale,
-                norm_layer = nn.BatchNorm2d,
+                norm = opt.norm,
                 gpu_ids = opt.gpu_ids,
             )
         elif opt.which_model == 'unet_v2':
@@ -47,12 +47,7 @@ class FlowRegressionModel(BaseModel):
             self.crit_flow_ss = networks.SS_FlowLoss(loss_type='l1')
         if self.is_train:
             self.optimizers = []
-            params = []
-            if not (self.opt.use_post_refine and self.opt.fix_netF):
-                params.append({'params': self.netF.parameters()})
-            if self.opt.use_post_refine:
-                params.append({'params': self.netPR.parameters()})
-            self.optim = torch.optim.Adam(params, lr=opt.lr, betas=(opt.beta1, opt.beta2), weight_decay=opt.weight_decay)
+            self.optim = torch.optim.Adam(self.netF.parameters(), lr=opt.lr, betas=(opt.beta1, opt.beta2), weight_decay=opt.weight_decay)
             self.optimizers.append(self.optim)
             
         ###################################

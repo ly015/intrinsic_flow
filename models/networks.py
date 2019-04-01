@@ -470,6 +470,14 @@ class FlowUnetSkipConnectionBlock(nn.Module):
             nn.LeakyReLU(0.1),
             nn.Conv2d(outer_nc, 2, kernel_size=3, stride=1, padding=1))
 
+    def forward(self, x):
+        if self.outermost:
+            x_ = self.down(x)
+            x_, x_pyramid, flow_pyramid = self.submodule(x_)
+            x_ = self.up(x_)
+            x_out = x_
+        elif self.
+
 class FlowUnet(nn.Module):
     def __init__(self, input_nc, nf=16, start_scale=2, num_scale=5, norm='batch', gpu_ids=[], max_nf=512):
         super(FlowUnet, self).__init__()

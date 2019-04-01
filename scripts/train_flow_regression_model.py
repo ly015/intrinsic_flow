@@ -13,7 +13,10 @@ import sys
 import numpy as np
 import tqdm
 
-opt = TrainFlowRegressionOptions().parse()
+# parse and store options
+parser = TrainFlowRegressionOptions()
+opt = parser.parse()
+parser.save()
 # create model
 model = FlowRegressionModel()
 model.initialize(opt)

@@ -61,7 +61,7 @@ class BaseVisualizer(object):
         self.f_log = None
 
         # load pavi
-        if opt.pavi and opt.is_train:
+        if False:
             self.pavi_client = PaviClient(username = 'liyining', password = '123456')
             # self.pavi_client = PaviClient(username = 'ly015', password = '123456')
             self.pavi_client.connect(model_name = opt.id, info = {'session_text': opt_to_str(opt)})

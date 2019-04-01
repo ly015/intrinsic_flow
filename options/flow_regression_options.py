@@ -36,7 +36,7 @@ class BaseFlowRegressionOptions(BaseOptions):
         # data setting
         ##############################
         parser.add_argument('--dataset_type', type=str, default='flow', help='type of dataset. see data/data_loader.py')
-        parser.add_argument('--dataset_name', type=str, default='dfm', choices=['dfm', 'market'])
+        parser.add_argument('--dataset_name', type=str, default='deepfashion', choices=['deepfashion', 'market'])
         parser.add_argument('--image_size', type=int, nargs='+', default=[256,256], help='image size (H,W)')
         parser.add_argument('--batch_size', type = int, default = 8, help = 'batch size')
         parser.add_argument('--data_root', type=str, default=None, help='Set in auto_set()')
@@ -108,6 +108,7 @@ class TrainFlowRegressionOptions(BaseFlowRegressionOptions):
         parser.add_argument('--niter_decay', type=int, default=0, help='# of iter to linearly decay learning rate to zero')
         parser.add_argument('--lr_decay', type=int, default=8, help='multiply by a gamma every lr_decay_interval epochs')
         parser.add_argument('--lr_gamma', type = float, default = 0.5, help='lr decay rate')
+        parser.add_argument('--display_freq', type=int, default=10, help='every # iteration display loss information')
         parser.add_argument('--test_epoch_freq', type = int, default = 1, help='every # epoch test model')
         parser.add_argument('--save_epoch_freq', type = int, default = 5, help='every # epoch save current model weights' )
         parser.add_argument('--vis_epoch_freq', type = int, default = 1, help='every # epoch visualize result in exp_dir/vis/')
