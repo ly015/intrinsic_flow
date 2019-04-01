@@ -425,13 +425,69 @@ class UnetDecoder(nn.Module):
 ##############################################
 # Flow networks
 ##############################################
+class FlowUnetSkipConnectionBlock(nn.Module):
+    def __init__(self, outer_nc, inner_nc, input_nc=None,
+                 submodule=None, outermost=False, innermost=False, norm_layer=nn.BatchNorm2d):
+        super(FlowUnetSkipConnectionBlock, self).__init__()
+        self.outermost = outermost
+        self.innermost = innermost
+        if type(norm_layer) == functools.partial:
+            use_bias = norm_layer.func == nn.InstanceNorm2d
+        else:
+            use_bias = norm_layer == nn.InstanceNorm2d
+        if input_nc is None:
+            input_nc = outer_nc
+        downconv = nn.Conv2d(input_nc, inner_nc, kernel_size=4,
+                             stride=2, padding=1, bias=use_bias)
+        downrelu = nn.LeakyReLU(0.2, True)
+        downnorm = norm_layer(inner_nc)
+        uprelu = nn.ReLU(True)
+        upnorm = norm_layer(outer_nc)
+
+        if outermost:
+            upconv = nn.ConvTranspose2d(inner_nc * 2, outer_nc,
+                                        kernel_size=4, stride=2,
+                                        padding=1)
+            down = [downconv, downnorm]
+            up = [uprelu, upconv, upnorm]
+        elif innermost:
+            upconv = nn.ConvTranspose2d(inner_nc, outer_nc,
+                                        kernel_size=4, stride=2,
+                                        padding=1, bias=use_bias)
+            down = [downrelu, downconv]
+            up = [uprelu, upconv, upnorm]
+        else:
+            upconv = nn.ConvTranspose2d(inner_nc * 2, outer_nc,
+                                        kernel_size=4, stride=2,
+                                        padding=1, bias=use_bias)
+            down = [downrelu, downconv, downnorm]
+            up = [uprelu, upconv, upnorm]
+
+        self.down = nn.Sequential(*down)
+        self.up = nn.Sequential(*up)
+        self.submodule = submodule
+        self.predict_flow = nn.Sequential(
+            nn.LeakyReLU(0.1),
+            nn.Conv2d(outer_nc, 2, kernel_size=3, stride=1, padding=1))
+
 class FlowUnet(nn.Module):
-    def __init__(self, input_nc, nf=16, start_scale=2, num_scale=5, norm_layer=nn.BatchNorm2d, gpu_ids=[], max_nf=512):
+    def __init__(self, input_nc, nf=16, start_scale=2, num_scale=5, norm='batch', gpu_ids=[], max_nf=512):
         super(FlowUnet, self).__init__()
         self.gpu_ids = gpu_ids
         self.nf = nf
+        self.norm = norm
         self.start_scale = 2
         self.num_scale = 5
+
+        if norm == 'batch':
+            norm_layer = nn.BatchNorm2d
+            use_bias = False
+        elif norm == 'instance':
+            norm_layer = nn.InstanceNorm2d
+            use_bias = True
+        else:
+            raise NotImplementedError()
+
         if type(norm_layer) == functools.partial:
             use_bias = norm_layer.func == nn.InstanceNorm2d
         else:
@@ -510,7 +566,7 @@ class FlowUnet_v2(nn.Module):
             c_in = min(nf*(i+1), max_nf)
             c_out = min(nf*(i+2), max_nf)
             pre_conv += [
-                ResidualBlock(c_in, None, norm_layer, use_bias, activation, use_dropout=False),
+                ResidualBlock(c_in, None, norm_layer, use_bias, activation, use_dropout=use_dropout),
                 activation,
                 nn.Conv2d(c_in, c_out, kernel_size=3, stride=2, padding=1, bias=use_bias),
                 norm_layer(c_out)
@@ -522,7 +578,7 @@ class FlowUnet_v2(nn.Module):
             c_out = min(nf * (start_level+l+2), max_nf)
             # encoding layers
             for i in range(n_residual_blocks):
-                self.__setattr__('enc_%d_res_%d'%(l, i), ResidualBlock(c_in, None, norm_layer, use_bias, activation, use_dropout=False))
+                self.__setattr__('enc_%d_res_%d'%(l, i), ResidualBlock(c_in, None, norm_layer, use_bias, activation, use_dropout=use_dropout))
             downsample = nn.Sequential(
                 activation,
                 nn.Conv2d(c_in, c_out, kernel_size=3, stride=2, padding=1, bias=use_bias),
