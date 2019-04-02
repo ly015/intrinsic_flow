@@ -54,7 +54,7 @@ class BaseModel(object):
         torch.save(network.cpu().state_dict(), save_path)
 
         if len(gpu_ids) and torch.cuda.is_available():
-            network.cuda(gpu_ids[0])
+            network.cuda()
 
     def load_network(self, network, network_label, epoch_label, model_id = None, forced = True):
         save_filename = '%s_net_%s.pth' % (epoch_label, network_label)

@@ -3,7 +3,7 @@ from __future__ import division, print_function
 import torch
 from data.data_loader import CreateDataLoader
 from models.flow_regression_model import FlowRegressionModel
-from options.flow_regression_options import TrainFlowRegressionOptions
+from options.flow_regression_options import TestFlowRegressionOptions
 from util.visualizer import FlowVisualizer
 from util.loss_buffer import LossBuffer
 
@@ -13,10 +13,10 @@ import sys
 import numpy as np
 import tqdm
 
-opt = TrainFlowRegressionOptions().parse()
+opt = TestFlowRegressionOptions().parse()
 print('load training options.')
 train_opt = io.load_json(os.path.join('checkpoints', opt.id, 'train_opt.json'))
-preserved_opt = {'gpu_ids', 'is_train', 'batch_size', 'which_epoch', 'fn_pose', 'silh_dir'}
+preserved_opt = {'gpu_ids', 'is_train', 'batch_size', 'which_epoch'}
 for k, v in train_opt.iteritems():
     if k in opt and (k not in preserved_opt):
         setattr(opt, k, v)

@@ -125,5 +125,5 @@ class TestFlowRegressionOptions(BaseFlowRegressionOptions):
         super(TestFlowRegressionOptions, self).initialize()
         self.is_train = False
         parser = self.parser
-        parser.add_argument('--which_epoch', type=int, default='best', help='which epoch to load stored model weights')
+        parser.add_argument('--which_epoch', type=str, default='best', help='which epoch to load stored model weights')
 
