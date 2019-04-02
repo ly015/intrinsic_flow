@@ -186,8 +186,8 @@ class FlowDataset(BaseDataset):
         ######################
         # create seg representation
         ######################
-        seg_1 = seg_label_to_map(seg_label_1, nc=self.opt.seg_nc, bin_size=self.opt.seg_bin_size)
-        seg_2 = seg_label_to_map(seg_label_2, nc=self.opt.seg_nc, bin_size=self.opt.seg_bin_size)
+        seg_1 = seg_label_to_map(seg_label_1, nc=self.opt.seg_nc)
+        seg_2 = seg_label_to_map(seg_label_2, nc=self.opt.seg_nc)
         ######################
         # pack output
         ######################

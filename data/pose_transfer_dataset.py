@@ -21,7 +21,6 @@ class PoseTransferDataset(BaseDataset):
         #############################
         data_split = io.load_json(os.path.join(opt.data_root, opt.fn_split))
         self.img_dir = os.path.join(opt.data_root, opt.img_dir)
-        self.seg_dir = os.path.join(opt.data_root, opt.seg_dir)
         self.silh_dir = os.path.join(opt.data_root, opt.silh_dir)
         self.corr_dir = os.path.join(opt.data_root, opt.corr_dir)
         self.pose_label = io.load_data(os.path.join(opt.data_root, opt.fn_pose))
@@ -50,12 +49,7 @@ class PoseTransferDataset(BaseDataset):
         img = cv2.imread(fn).astype(np.float32) / 255.
         img = img[...,[2,1,0]]
         return img
-    
-    def read_seg(self, sid):
-        fn = os.path.join(self.seg_dir, sid+'.bmp')
-        seg = cv2.imread(fn, cv2.IMREAD_GRAYSCALE).astype(np.float32)[...,np.newaxis]
-        return seg
-    
+        
     def read_flow(self, sid1, sid2):
         '''
         Output:
@@ -115,8 +109,8 @@ class PoseTransferDataset(BaseDataset):
         ######################
         img_1 = self.read_image(sid1)
         img_2 = self.read_image(sid2)
-        joint_c_1 = np.array(self.joint_label[sid1])
-        joint_c_2 = np.array(self.joint_label[sid2])
+        joint_c_1 = np.array(self.pose_label[sid1])
+        joint_c_2 = np.array(self.pose_label[sid2])
         corr_2to1, vis_2 = self.read_corr(sid1, sid2)
         ######################
         # augmentation

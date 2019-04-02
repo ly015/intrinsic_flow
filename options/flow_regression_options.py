@@ -5,10 +5,6 @@ class BaseFlowRegressionOptions(BaseOptions):
         super(BaseFlowRegressionOptions, self).initialize()
         parser = self.parser
         ##############################
-        # General Setting
-        ##############################
-
-        ##############################
         # Model Setting
         ##############################
         parser.add_argument('--which_model', type=str, default='unet_v2', choices=['unet', 'unet_v2'], help='model architecture')
@@ -29,9 +25,8 @@ class BaseFlowRegressionOptions(BaseOptions):
         parser.add_argument('--joint_nc', type=int, default=18, help='2d joint number. 18 for openpose joint')
         parser.add_argument('--joint_mode', type=str, default='binary', choices=['binary', 'gaussian'])
         parser.add_argument('--joint_radius', type=int, default=8, help='radius of joint map')
-        # parser.add_argument('--seg_nc', type=int, default=20, help='number of segmentation classes, 7 for ATR and 8 for LIP, 20 for full LIP')
         parser.add_argument('--seg_nc', type=int, default=7, help='number of segmentation classes, 7 for SMPL projection')
-        parser.add_argument('--seg_bin_size', type=int, default=1, help='bin size of downsampled seg mask')
+        # parser.add_argument('--seg_bin_size', type=int, default=1, help='bin size of downsampled seg mask')
         ##############################
         # data setting
         ##############################
