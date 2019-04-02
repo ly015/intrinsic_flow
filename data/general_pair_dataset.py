@@ -245,7 +245,7 @@ class GeneralPairDataset(BaseDataset):
                 flow[...,0] = flow[...,0].clip(-self.opt.image_size[1], self.opt.image_size[1]) # remove outliers
                 flow[...,1] = flow[...,1].clip(-self.opt.image_size[0], self.opt.image_size[0]) # remove outliers
                 data_out['flow_2to1'] = self.to_tensor(flow)
-                data_out['vis_2to1'] = self.to_tensor(vis)
+                data_out['vis_2'] = self.to_tensor(vis)
 
         if use_augmentation and self.opt.aug_color_jit:
             data_out['img_1'], data_out['img_2'] = self.color_jit(data_out['img_1'], data_out['img_2'])

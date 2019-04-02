@@ -46,9 +46,7 @@ class FlowDataset(BaseDataset):
         return torch.Tensor(img.transpose((2,0,1)))
     
     def read_image(self, sid, img_dir=None):
-        if img_dir is None:
-            img_dir = self.img_dir
-        fn = os.path.join(img_dir, sid+'.jpg')
+        fn = os.path.join(self.img_dir, sid+'.jpg')
         img = cv2.imread(fn).astype(np.float32) / 255.
         img = img[...,[2,1,0]]
         return img
@@ -70,8 +68,13 @@ class FlowDataset(BaseDataset):
                 2: background pixel
         '''
         fn = os.path.join(self.corr_dir, '%s_%s.corr'%(sid2, sid1))
-        corr_2to1, mask_2 = flow_util.read_corr(fn)
-        return corr_2to1, mask_2
+        corr_2to1, vis_2 = flow_util.read_corr(fn)
+        vis_2 = vis_2[...,np.newaxis]
+        if self.opt.vis_smooth_rate > 0:
+            vis_2b = cv2.medianBlur(vis_2, self.opt.vis_smooth_rate)[...,np.newaxis]
+            m = (vis_2<2).astype(np.uint8)
+            vis_2 = vis_2b*m + vis_2*(1-m)
+        return corr_2to1, vis_2
     
     @staticmethod
     def scale_image(img, scale, pad=0, interp=None):
@@ -154,15 +157,7 @@ class FlowDataset(BaseDataset):
         joint_c_1 = np.array(self.pose_label[sid1])
         joint_c_2 = np.array(self.pose_label[sid2])
         corr_2to1, vis_2 = self.read_corr(sid1, sid2)
-        vis_2 = vis_2[...,np.newaxis] #(H,W,1) uint8
         flow_2to1 = flow_util.corr_to_flow(corr_2to1, vis_2, order='HWC')
-        ######################
-        # smooth visiblity map
-        ######################
-        if self.opt.vis_smooth_rate > 0:
-            vis_2b = cv2.medianBlur(vis_2, self.opt.vis_smooth_rate)[...,np.newaxis]
-            m = (vis_2<2).astype(np.uint8)
-            vis_2 = vis_2b*m + vis_2*(1-m)
         ######################
         # augmentation
         ######################
@@ -199,8 +194,8 @@ class FlowDataset(BaseDataset):
         data = {
             'img_1': self.tensor_normalize_std(self.to_tensor(img_1)),
             'img_2': self.tensor_normalize_std(self.to_tensor(img_2)),
-            'joint_c_1': torch.Tensor(joint_c_1),
-            'joint_c_2': torch.Tensor(joint_c_2),
+            'joint_c_1': torch.from_numpy(joint_c_1).float(),
+            'joint_c_2': torch.from_numpy(joint_c_2).float(),
             'joint_1': self.to_tensor(joint_1),
             'joint_2': self.to_tensor(joint_2),
             'seg_label_1': self.to_tensor(seg_label_1),
