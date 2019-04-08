@@ -128,7 +128,7 @@ class TrainPoseTransferOptions(BasePoseTransferOptions):
         parser.add_argument('--lr_policy', type=str, default='step', choices = ['step', 'plateau', 'lambda'], help='learning rate policy: lambda|step|plateau')
         parser.add_argument('--niter', type = int, default=30, help = '# of iter at starting learning rate')
         parser.add_argument('--niter_decay', type=int, default=0, help='# of iter to linearly decay learning rate to zero')
-        parser.add_argument('--lr_decay', type=int, default=10, help='multiply by a gamma every lr_decay_interval epochs')
+        parser.add_argument('--lr_decay', type=int, default=100, help='multiply by a gamma every lr_decay_interval epochs')
         parser.add_argument('--lr_gamma', type = float, default = 0.1, help='lr decay rate')
         parser.add_argument('--display_freq', type = int, default = 10, help='frequency of showing training results on screen')
         parser.add_argument('--test_epoch_freq', type = int, default = 1, help='frequency of testing model')
@@ -137,6 +137,7 @@ class TrainPoseTransferOptions(BasePoseTransferOptions):
         parser.add_argument('--check_grad_freq', type = int, default = 100, help = 'frequency of checking gradient of each loss')
         parser.add_argument('--nvis', type = int, default = 64, help='number of visualized images')
         # loss setting
+        parser.add_argument('--epoch_add_gan', type=int, default=6, help='add gan loss after # epochs of training')
         parser.add_argument('--loss_weight_l1', type=float, default=1.)
         parser.add_argument('--loss_weight_content', type=float, default=1.)
         parser.add_argument('--loss_weight_style', type=float, default=0)
@@ -145,7 +146,6 @@ class TrainPoseTransferOptions(BasePoseTransferOptions):
         #parser.add_argument('--vgg_content_weights', type=float, nargs='+', default=[1.0/32, 1.0/16, 1.0/8, 1.0/4, 1.0])
         parser.add_argument('--vgg_content_weights', type=float, nargs='+', default=[0.125, 0.125, 0.125, 0.125, 0.125])
         parser.add_argument('--vgg_content_mode', type=str, default='balance', choices=['balance', 'imbalance', 'special'])
-        parser.add_argument('--loss_weight_pix_warp', type=float, default=0.5, help='loss = w*loss(img_out)+(1-w)*loss(img_out_G)')
 
     def auto_set(self):
         super(TrainPoseTransferOptions, self).auto_set()

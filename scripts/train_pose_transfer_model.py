@@ -47,6 +47,7 @@ else:
 
 for epoch in tqdm.trange(epoch_count, opt.niter+opt.niter_decay+1, desc='Epoch'):
     model.update_learning_rate()
+    model.use_gan = (opt.loss_weight_gan > 0) and (epoch >= opt.epoch_add_gan)
     for i,data in enumerate(tqdm.tqdm(train_loader, desc='Train')):
         total_steps += 1
         model.set_input(data)
