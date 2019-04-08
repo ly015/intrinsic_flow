@@ -148,6 +148,88 @@ class UnetGenerator(nn.Module):
             out = self.dec_output(x)
             return out
 
+class UnetGenerator_MultiOutput(nn.Module):
+    '''
+    A variation of UnetGenerator that support multiple output branches
+    '''
+    def __init__(self, input_nc, output_nc = [3], nf=64, max_nf=256, num_scales=7, n_residual_blocks=2, norm='batch', activation=nn.ReLU(False), use_dropout=False, gpu_ids=[]):
+        super(UnetGenerator_MultiOutput, self).__init__()
+        self.input_nc = input_nc
+        self.output_nc = output_nc if isinstance(output_nc, list) else [output_nc]
+        self.nf = nf
+        self.max_nf = max_nf
+        self.num_scales = num_scales
+        self.n_residual_blocks = n_residual_blocks
+        self.norm = norm
+        self.gpu_ids = gpu_ids
+        self.use_dropout = use_dropout
+
+        if norm == 'batch':
+            norm_layer = nn.BatchNorm2d
+            use_bias = False
+        elif norm == 'instance':
+            norm_layer = nn.InstanceNorm2d
+            use_bias = True
+        else:
+            raise NotImplementedError()
+        
+        self.pre_conv = channel_mapping(input_nc, nf, norm_layer, use_bias)
+        for l in range(num_scales):
+            c_in = min(nf * (l+1), max_nf)
+            c_out = min(nf * (l+2), max_nf)
+            # encoding layers
+            for i in range(n_residual_blocks):
+                self.__setattr__('enc_%d_res_%d'%(l, i), ResidualBlock(c_in, None, norm_layer, use_bias, activation, use_dropout=False))
+            downsample = nn.Sequential(
+                activation,
+                nn.Conv2d(c_in, c_out, kernel_size=3, stride=2, padding=1, bias=use_bias),
+                norm_layer(c_out)
+            )
+            self.__setattr__('enc_%d_downsample'%l, downsample)
+            # decoding layers
+            upsample = nn.Sequential(
+                activation,
+                nn.Conv2d(c_out, c_in*4, kernel_size=3, padding=1, bias=use_bias),
+                nn.PixelShuffle(2),
+                norm_layer(c_in)
+            )
+            self.__setattr__('dec_%d_upsample'%l, upsample)
+            for i in range(n_residual_blocks):
+                self.__setattr__('dec_%d_res_%d'%(l, i), ResidualBlock(c_in, c_in, norm_layer, use_bias, activation, use_dropout))
+
+        for i, c_out in enumerate(output_nc):
+            dec_output_i = nn.Sequential(
+                channel_mapping(nf, nf, norm_layer, use_bias),
+                activation,
+                nn.ReflectionPad2d(3),
+                nn.Conv2d(nf, c_out, kernel_size=7, padding=0, bias=True)
+                )
+            self.__setattr__('dec_output_%d'%i, dec_output_i)
+    
+    def forward(self, x, single_device=False):
+        if len(self.gpu_ids) > 1 and (not single_device):
+            return nn.parallel.data_parallel(self, x, module_kwargs={'single_device':True})
+        else:
+            hiddens = []
+            x = self.pre_conv(x)
+            # encode
+            for l in range(self.num_scales):
+                for i in range(self.n_residual_blocks):
+                    x = self.__getattr__('enc_%d_res_%d'%(l,i))(x)
+                    hiddens.append(x)
+                x = self.__getattr__('enc_%d_downsample'%l)(x)
+            # decode
+            for l in range(self.num_scales-1,-1,-1):
+                x = self.__getattr__('dec_%d_upsample'%l)(x)
+                for i in range(self.n_residual_blocks-1,-1,-1):
+                    h = hiddens.pop()
+                    x = self.__getattr__('dec_%d_res_%d'%(l, i))(x,h)
+            out = []
+            for i in range(len(self.output_nc)):
+                out.append(self.__getattr__('dec_output_%d'%i)(x))
+            return out
+
+
 class DualUnetGenerator(nn.Module):
     '''
     A variation of Unet architecture, similar to deformable gan. It contains two encoders: one for target pose and one for appearance. The feature map of appearance encoder will be warped to target pose, guided
