@@ -25,13 +25,13 @@ class PoseTransferModel(BaseModel):
         ###################################
         if opt.which_model_G == 'unet':
             self.netG = networks.UnetGenerator(
-                input_nc = self.get_tensor_dim('+'.join(opt.G_appearance_type, opt.G_pose_type)),
+                input_nc = self.get_tensor_dim('+'.join([opt.G_appearance_type, opt.G_pose_type])),
                 output_nc = 3,
                 nf = opt.G_nf,
                 max_nf = opt.G_max_nf,
                 num_scales = opt.G_n_scale,
                 n_residual_blocks = 2,
-                norm = opt.norm,
+                norm = opt.G_norm,
                 activation = nn.LeakyReLU(0.1) if opt.G_activation=='leaky_relu' else nn.ReLU(),
                 use_dropout = False,
                 gpu_ids = opt.gpu_ids
@@ -47,7 +47,7 @@ class PoseTransferModel(BaseModel):
                 num_scales = opt.G_n_scale,
                 num_warp_scales = opt.G_n_warp_scale,
                 n_residual_blocks = 2,
-                norm = opt.norm,
+                norm = opt.G_norm,
                 vis_mode = opt.G_vis_mode,
                 activation = nn.LeakyReLU(0.1) if opt.G_activation=='leaky_relu' else nn.ReLU(),
                 use_dropout = False,
@@ -69,7 +69,7 @@ class PoseTransferModel(BaseModel):
                 max_nf = 128,
                 num_scales = pix_warp_n_scale,
                 n_residual_blocks = 2,
-                norm = opt.norm,
+                norm = opt.G_norm,
                 activation = nn.ReLU(False),
                 use_dropout = False,
                 gpu_ids = opt.gpu_ids
@@ -133,7 +133,7 @@ class PoseTransferModel(BaseModel):
         elif opt.pretrained_G_id is not None:
             # load pretrained network
             self.load_network(self.netG, 'netG', opt.pretrained_G_epoch, opt.pretrained_G_id)
-        elif opt.continue_train:
+        elif opt.resume_train:
             # resume training
             self.load_network(self.netG, 'netG', opt.which_epoch)
             self.load_optim(self.optim, 'optim', opt.which_epoch)
@@ -148,7 +148,7 @@ class PoseTransferModel(BaseModel):
         if self.is_train:
             self.schedulers = []
             for optim in self.optimizers:
-                self.schedulers.append(networks_flow.get_scheduler(optim, opt))
+                self.schedulers.append(networks.get_scheduler(optim, opt))
         
     
     def set_input(self, data):
@@ -183,11 +183,11 @@ class PoseTransferModel(BaseModel):
                     self.output['mask_out'] = (self.output['vis_out']<2).float()
                     self.output['flow_out'] = flow_out * flow_scale * self.output['mask_out']
                     self.output['flow_tar'] = self.input['flow_2to1']
-                    self.output['vis_tar'] = self.input['vis_2to1']
+                    self.output['vis_tar'] = self.input['vis_2']
                     self.output['mask_tar'] = (self.output['vis_tar']<2).float()
             else:
                 self.output['flow_out'] = self.input['flow_2to1']
-                self.output['vis_out'] = self.input['vis_2to1']
+                self.output['vis_out'] = self.input['vis_2']
                 self.output['mask_out'] = (self.output['vis_out']<2).float()
                 self.output['flow_tar'] = self.output['flow_out']
                 self.output['vis_tar'] = self.output['vis_out']
@@ -201,15 +201,15 @@ class PoseTransferModel(BaseModel):
        
         # generate image
         if self.opt.which_model_G == 'unet':
-            input_G = self.get_tensor(self.opt.G_input_type)
+            input_G = self.get_tensor('+'.join([self.opt.G_appearance_type, self.opt.G_pose_type]))
             out = self.netG(input_G)
             self.output['img_out'] = F.tanh(out)
         elif self.opt.which_model_G == 'dual_unet':
-            input_G_pose = self.get_tensor(self.opt.G_unetfw_pose_type)
-            input_G_appearance = self.get_tensor(self.opt.G_unetfw_appearance_type)
+            input_G_pose = self.get_tensor(self.opt.G_pose_type)
+            input_G_appearance = self.get_tensor(self.opt.G_appearance_type)
             flow_in, vis_in = (self.output['flow_out'], self.output['vis_out']) if self.opt.G_feat_warp else (None, None)
 
-            if not self.G_pix_warp:
+            if not self.opt.G_pix_warp:
                 out = self.netG(input_G_pose, input_G_appearance, flow_in, vis_in)
                 self.output['img_out'] = F.tanh(out)
             else:
@@ -223,6 +223,8 @@ class PoseTransferModel(BaseModel):
                 else:
                     self.output['img_out'] = self.output['img_warp']*self.output['pix_mask'] + self.output['img_out_G'] * (1-self.output['pix_mask'])
         self.output['img_tar'] = self.input['img_2']
+        self.output['seg_1'] = self.input['seg_1']
+        self.output['seg_2'] = self.input['seg_2']
             
     
     def test(self, compute_loss=False, meas_only=False):
@@ -269,7 +271,7 @@ class PoseTransferModel(BaseModel):
                 loss += self.output['loss_G'] * self.opt.loss_weight_gan
             loss.backward()
         else:
-            net_to_check = self.netG if not self.use_external_pexel_warper else self.netEPW
+            net_to_check = self.netG if not self.opt.G_pix_warp else self.netPW
             with networks.CalcGradNorm(net_to_check) as cgn:
                 (self.output['loss_l1'] * self.opt.loss_weight_l1).backward(retain_graph=True)
                 self.output['grad_l1'] = cgn.get_grad_norm()

@@ -60,8 +60,6 @@ for epoch in tqdm.trange(epoch_count, opt.niter+opt.niter_decay+1, desc='Epoch')
                 num_batch = len(train_loader), 
                 lr = model.optimizers[0].param_groups[0]['lr'], 
                 errors = train_error))
-            if opt.pavi:
-                visualizer.pavi_log(phase='train', iter_num=total_steps, outputs=train_error, pavi_items=pavi_items)
         
     if epoch % opt.test_epoch_freq == 0:
         # model.get_current_errors() #erase training error information
@@ -73,8 +71,6 @@ for epoch in tqdm.trange(epoch_count, opt.niter+opt.niter_decay+1, desc='Epoch')
             loss_buffer.add(model.get_current_errors())
         test_error = loss_buffer.get_errors()
         tqdm.tqdm.write(visualizer.print_test_error(iter_num=total_steps, epoch=epoch, errors=test_error))
-        if opt.pavi:
-            visualizer.pavi_log(phase='test', iter_num=total_steps, outputs=test_error, pavi_items=pavi_items)
         # save best
         if best_info['best_epoch']==-1 or (test_error[best_info['meas']].item()<best_info['best_value'] and best_info['type']=='min') or (test_error[best_info['meas']].item()>best_info['best_value'] and best_info['type']=='max'):
             tqdm.tqdm.write('save as best epoch!')
@@ -120,4 +116,3 @@ for epoch in tqdm.trange(epoch_count, opt.niter+opt.niter_decay+1, desc='Epoch')
         model.save(epoch)
     model.save('latest')
 print(best_info)
-

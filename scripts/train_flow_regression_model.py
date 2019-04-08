@@ -119,6 +119,3 @@ for epoch in tqdm.trange(epoch_count, opt.niter+opt.niter_decay+1, desc='Epoch')
     model.save('latest')
 
 print(best_info)
-
-
-        

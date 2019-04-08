@@ -48,16 +48,18 @@ class BasePoseTransferOptions(BaseOptions):
         parser.add_argument('--joint_nc', type=int, default=18, help='2d joint number. 18 for openpose joint')
         parser.add_argument('--joint_mode', type=str, default='binary', choices=['binary', 'gaussian'])
         parser.add_argument('--joint_radius', type=int, default=8, help='radius of joint map')
+        parser.add_argument('--seg_nc', type=int, default=7, help='number of segmentation classes')
         ##############################
         # data setting (dataset_mode == general_pair)
         ##############################
-        parser.add_argument('--dataset_type', type=str, default='poes_transfer', help='type of dataset. see data/data_loader.py')
+        parser.add_argument('--dataset_type', type=str, default='pose_transfer', help='type of dataset. see data/data_loader.py')
         parser.add_argument('--dataset_name', type=str, default='deepfashion', choices=['deepfashion', 'market'])
         parser.add_argument('--image_size', type=int, nargs='+', default=[256,256])
         parser.add_argument('--batch_size', type = int, default = 8, help = 'batch size')
         parser.add_argument('--data_root', type=str, default=None, help='Set in Options.auto_set()')
         parser.add_argument('--fn_split', type=str, default=None, help='Set in Options.auto_set()')
         parser.add_argument('--img_dir', type=str, default=None, help='Set in Options.auto_set()')
+        parser.add_argument('--seg_dir', type=str, default=None, help='Set in Options.auto_set()')
         parser.add_argument('--corr_dir', type=str, default=None, help='Set in Options.auto_set()')
         parser.add_argument('--fn_pose', type=str, default=None, help='Set in Options.auto_set()')
         parser.add_argument('--debug', action='store_true', help='debug')
@@ -91,6 +93,7 @@ class BasePoseTransferOptions(BaseOptions):
             opt.data_root = 'datasets/market1501'
             opt.fn_split = 'Label/pair_split.json'
             opt.img_dir = 'Images/img/'
+            opt.seg_dir = 'Images/silhouette6/'
             opt.fn_poes = 'Label/pose_label.pkl'
             opt.corr_dir = '3d/hmr/corr/'
 
@@ -100,6 +103,7 @@ class BasePoseTransferOptions(BaseOptions):
             opt.data_root = 'datasets/DF_Pose/'
             opt.fn_split = 'Label/pair_split_dfm_new.json'
             opt.img_dir = 'Img/img/'
+            opt.seg_dir = 'Img/silhouette6/'
             opt.fn_pose = 'Label/pose_label_dfm.pkl' # joint coordinates detected by openpose
             opt.corr_dir = '3d/hmr_dfm_v2/corr/'
 
@@ -144,7 +148,7 @@ class TrainPoseTransferOptions(BasePoseTransferOptions):
         parser.add_argument('--loss_weight_pix_warp', type=float, default=0.5, help='loss = w*loss(img_out)+(1-w)*loss(img_out_G)')
 
     def auto_set(self):
-        super(TrainCascadeTransferOptions, self).auto_set()
+        super(TrainPoseTransferOptions, self).auto_set()
         opt = self.opt
         if opt.vgg_content_mode == 'balance':
             opt.vgg_content_weights = [0.125, 0.125, 0.125, 0.125, 0.125]

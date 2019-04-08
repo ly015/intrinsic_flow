@@ -13,7 +13,9 @@ import sys
 import numpy as np
 import tqdm
 
-opt = TestFlowRegressionOptions().parse()
+parser = TestFlowRegressionOptions()
+opt = parser.parse()
+parser.save()
 print('load training options.')
 train_opt = io.load_json(os.path.join('checkpoints', opt.id, 'train_opt.json'))
 preserved_opt = {'gpu_ids', 'is_train', 'batch_size', 'which_epoch'}
