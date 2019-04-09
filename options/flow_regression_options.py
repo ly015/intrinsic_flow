@@ -99,8 +99,8 @@ class TrainFlowRegressionOptions(BaseFlowRegressionOptions):
         # scheduler
         parser.add_argument('--lr_policy', type=str, default='step', choices = ['step', 'plateau', 'lambda'], help='learning rate policy: lambda|step|plateau')
         # parser.add_argument('--epoch_count', type=int, default=1, help='the starting epoch count, we save the model by <epoch_count>, <epoch_count>+<save_latest_freq>, ...')
-        parser.add_argument('--niter', type = int, default=30, help = '# of iter at starting learning rate')
-        parser.add_argument('--niter_decay', type=int, default=0, help='# of iter to linearly decay learning rate to zero')
+        parser.add_argument('--n_epoch', type = int, default=30, help = '# of epoch at starting learning rate')
+        parser.add_argument('--n_epoch_decay', type=int, default=0, help='# of epoch to linearly decay learning rate to zero')
         parser.add_argument('--lr_decay', type=int, default=8, help='multiply by a gamma every lr_decay_interval epochs')
         parser.add_argument('--lr_gamma', type = float, default = 0.5, help='lr decay rate')
         parser.add_argument('--display_freq', type=int, default=10, help='every # iteration display loss information')
