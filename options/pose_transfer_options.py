@@ -135,7 +135,7 @@ class TrainPoseTransferOptions(BasePoseTransferOptions):
         parser.add_argument('--save_epoch_freq', type = int, default = 1, help='frequency of saving model to disk' )
         parser.add_argument('--vis_epoch_freq', type = int, default = 1, help='frequency of visualizing generated images')
         parser.add_argument('--check_grad_freq', type = int, default = 100, help = 'frequency of checking gradient of each loss')
-        parser.add_argument('--nvis', type = int, default = 64, help='number of visualized images')
+        parser.add_argument('--n_vis', type = int, default = 64, help='number of visualized images')
         # loss setting
         parser.add_argument('--epoch_add_gan', type=int, default=6, help='add gan loss after # epochs of training')
         parser.add_argument('--loss_weight_l1', type=float, default=1.)
@@ -162,14 +162,11 @@ class TestPoseTransferOptions(BasePoseTransferOptions):
         self.is_train = False
         parser = self.parser
         parser.add_argument('--data_split', type=str, default='test')
-        parser.add_argument('--nbatch', type=int, default=-1, help='set number of minibatch used for test')
-        # visualize samples
-        parser.add_argument('--visualize', action='store_true', help='visualize result')
-        parser.add_argument('--test_nvis', type = int, default = 64, help='number of visualized images')
+        parser.add_argument('--n_test_batch', type=int, default=-1, help='set number of minibatch used for test')
+        # visualize samples        
+        parser.add_argument('--n_vis', type = int, default = 64, help='number of visualized images')
         # save generated images
         parser.add_argument('--save_output', action='store_true', help='save output images in the folder exp_dir/test/')
         parser.add_argument('--output_dir', type=str, default='output', help='path to save generated images')
-        # visualize batch
-        parser.add_argument('--visualize_batch', action='store_true')
-        parser.add_argument('--test_batch_nvis', type=int, default=20)
+        
         
