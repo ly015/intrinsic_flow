@@ -63,7 +63,7 @@ class PoseTransferModel(BaseModel):
         if opt.G_pix_warp:
             pix_warp_n_scale = opt.G_n_scale
             self.netPW = networks.UnetGenerator_MultiOutput(
-                input_nc = self.get_tensor_dim(opt.epw_input_type),
+                input_nc = self.get_tensor_dim(opt.G_pix_warp_input_type),
                 output_nc = [1], # only use one output branch (weight mask)
                 nf = 32,
                 max_nf = 128,
@@ -128,7 +128,7 @@ class PoseTransferModel(BaseModel):
         if not self.is_train:
             # load trained model for testing
             self.load_network(self.netG, 'netG', opt.which_epoch)
-            if opt.use_pix_warp:
+            if opt.G_pix_warp:
                 self.load_network(self.netPW, 'netPW', opt.which_epoch)
         elif opt.pretrained_G_id is not None:
             # load pretrained network
@@ -140,7 +140,7 @@ class PoseTransferModel(BaseModel):
             if self.use_gan:
                 self.load_network(self.netD, 'netD', opt.which_epoch)
                 self.load_optim(self.optim_D, 'optim_D', opt.which_epoch)
-            if opt.use_pix_warp:
+            if opt.G_pix_warp:
                 self.load_network(self.netPW, 'netPW', opt.which_epoch)
         ###################################
         # schedulers

@@ -9,6 +9,7 @@ class BasePoseTransferOptions(BaseOptions):
         ##############################
         parser.add_argument('--init_type', type = str, default = 'kaiming', help = 'network initialization method [normal|xavier|kaiming|orthogonal]')
         # parser.add_argument('--no_dropout', type=int, default=1, choices=[0,1], help='no dropout in generator')
+        parser.add_argument('--use_dropout', type=int, default=0, choices=[0,1], help='use dropout in generator')
         # netG (general)
         parser.add_argument('--which_model_G', type=str, default='dual_unet', choices=['unet', 'dual_unet'], help='generator network architecture')
         parser.add_argument('--pretrained_G_id', type=str, default=None)
@@ -116,6 +117,7 @@ class TrainPoseTransferOptions(BasePoseTransferOptions):
         parser = self.parser
         # basic
         parser.add_argument('--resume_train', action = 'store_true', default = False, help = 'resume training from saved checkpoint')
+        parser.add_argument('--last_epoch', type=int, default=1)
         parser.add_argument('--small_val_set', type=int, default=1, choices=[0,1], help='use 1/5 test samples as validation set')
         # optimizer
         parser.add_argument('--lr', type = float, default = 2e-4, help = 'initial learning rate')
@@ -126,8 +128,8 @@ class TrainPoseTransferOptions(BasePoseTransferOptions):
         parser.add_argument('--weight_decay_D', type=float, default=4e-4)
         # scheduler
         parser.add_argument('--lr_policy', type=str, default='step', choices = ['step', 'plateau', 'lambda'], help='learning rate policy: lambda|step|plateau')
-        parser.add_argument('--niter', type = int, default=30, help = '# of iter at starting learning rate')
-        parser.add_argument('--niter_decay', type=int, default=0, help='# of iter to linearly decay learning rate to zero')
+        parser.add_argument('--n_epoch', type = int, default=30, help = '# of epoch at starting learning rate')
+        parser.add_argument('--n_epoch_decay', type=int, default=0, help='# of epoch to linearly decay learning rate to zero')
         parser.add_argument('--lr_decay', type=int, default=100, help='multiply by a gamma every lr_decay_interval epochs')
         parser.add_argument('--lr_gamma', type = float, default = 0.1, help='lr decay rate')
         parser.add_argument('--display_freq', type = int, default = 10, help='frequency of showing training results on screen')
@@ -161,6 +163,7 @@ class TestPoseTransferOptions(BasePoseTransferOptions):
         super(TestPoseTransferOptions, self).initialize()
         self.is_train = False
         parser = self.parser
+        parser.add_argument('--which_epoch', type=str, default='best')
         parser.add_argument('--data_split', type=str, default='test')
         parser.add_argument('--n_test_batch', type=int, default=-1, help='set number of minibatch used for test')
         # visualize samples        
