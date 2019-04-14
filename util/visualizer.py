@@ -52,7 +52,7 @@ def seg_to_rgb(seg_map, with_face=False):
 
     return rgb_map
 
-def merge_visual(visuals, kword_params={}):
+def merge_visual(visuals):
     imgs = []
     vis_list = []
     for name, (vis, vis_type) in visuals.iteritems():
@@ -61,31 +61,28 @@ def merge_visual(visuals, kword_params={}):
             vis_ = vis
         elif vis_type == 'seg':
             vis_ = seg_to_rgb(vis)
-        elif vis_type == 'segf':
-            if 'shape_with_face' in kword_params:
-                shape_with_face = kword_params['shape_with_face']
-            else:
-                shape_with_face = False
-            vis_ = seg_to_rgb(vis, shape_with_face)
-        elif vis_type == 'edge':
-            size = list(vis.size())
-            size[1] = 3
-            vis_ = vis.expand(size)
-        elif vis_type == 'color':
-            if vis.size(1) == 6:
-                vis_ = vis[:,0:3] + vis[:,3::]
         elif vis_type == 'pose':
-            # vis = vis.max(dim=1, keepdim=True)[0].expand(vis.size(0), 3, vis.size(2),vis.size(3))
-            torch.save(vis, 'test.pth')
-            pose_maps = vis.cpu().numpy().transpose(0,2,3,1)
-            np_vis_ = np.stack([pose_util.draw_pose_from_map(m, radius=6, threshold=0.)[0] for m in pose_maps])
-            vis_ = vis.new(np_vis_.transpose(0,3,1,2))
+            pose_maps = vis.numpy().transpose(0,2,3,1)
+            vis_ = np.stack([pose_util.draw_pose_from_map(m)[0] for m in pose_maps])
+            vis_ = vis.new(vis_.transpose(0,3,1,2)).float()/127.5 - 1.
+        elif vis_type == 'flow':
+            flows = vis.numpy().transpose(0,2,3,1)
+            vis_ = np.stack([flow_util.flow_to_rgb(f) for f in flows])
+            vis_ = vis.new(vis_.transpose(0,3,1,2)).float()/127.5 - 1.
+        elif vis_type == 'vis':
+            if vis.size(1) == 3:
+                vis = vis.argmax(dim=1, keepdim=True)
+            vis_ = vis.new(vis.size(0), 3, vis.size(2), vis.size(3)).float()
+            vis_[:,0,:,:] = (vis==1).float().squeeze(dim=1)*2-1 # red: not visible
+            vis_[:,1,:,:] = (vis==0).float().squeeze(dim=1)*2-1 # green: visible
+            vis_[:,2,:,:] = (vis==2).float().squeeze(dim=1)*2-1 # blue: background
+        elif vis_type == 'softmask':
+            vis_ = (vis*2-1).repeat(1,3,1,1)
         imgs.append(vis_)
         vis_list.append(name)
-
     imgs = torch.stack(imgs, dim=1)
     imgs = imgs.view(imgs.size(0)*imgs.size(1), imgs.size(2), imgs.size(3), imgs.size(4))
-    imgs.clamp_(-1.0, 1.0)
+    imgs.clamp_(-1., 1.)
     return imgs, vis_list
 
 class Visualizer(object):
@@ -105,7 +102,7 @@ class Visualizer(object):
         print('pytorch version: %s' % torch.__version__, file=self.log_file)
     
 
-    def log(self, info='', errors={}):
+    def log(self, info='', errors={}, log_in_file=True):
         '''
         Save log information into log file
         Input:
@@ -113,19 +110,25 @@ class Visualizer(object):
             error (dict): output of loss functions or metrics.
         Output:
             log_str (str) 
-        '''
-        if self.log_file is None:
-            self._open_log_file()
-        
+        '''        
         if isinstance(info, str):
             info_str = info
         elif isinstance(info, dict):
             info_str = '  '.join(['{}: {}'.format(k,v) for k, v in info.iteritems()])
-        
+                    
         error_str = '  '.join(['%s: %.4f'%(k,v) for k, v in errors.iteritems()])
         log_str = '[%s]  %s' %(info_str, error_str)
-
-        print(log_str, file=self.log_file)
+        
+        if log_in_file:
+            if self.log_file is None:
+                self._open_log_file()
+            print(log_str, file=self.log_file)
         return log_str
     
-    def visualize_results(self, )
+    def visualize_results(self, visuals, filename):
+        io.mkdir_if_missing(os.dirname(filename))
+        imgs, vis_item_list = merge_visual(visuals)
+        torchvision.utils.save_images(imgs, filename, nrow=len(visuals), normalize=True)
+        fn_list = os.path.join(os.path.dirname(filename), 'vis_item_list.txt')
+        io.save_str_list(vis_item_list, fn_list)
+

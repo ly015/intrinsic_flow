@@ -4,7 +4,7 @@ import torch
 from data.data_loader import CreateDataLoader
 from models.flow_regression_model import FlowRegressionModel
 from options.flow_regression_options import TestFlowRegressionOptions
-from util.visualizer import FlowVisualizer
+from util.visualizer import Visualizer
 from util.loss_buffer import LossBuffer
 
 import util.io as io
@@ -12,6 +12,7 @@ import os
 import sys
 import numpy as np
 import tqdm
+from collections import OrderedDict
 
 parser = TestFlowRegressionOptions()
 opt = parser.parse()
@@ -28,7 +29,7 @@ model.initialize(opt)
 # create data loader
 val_loader = CreateDataLoader(opt, split='test')
 # create visualizer
-visualizer = FlowVisualizer(opt)
+visualizer = Visualizer(opt)
 # test
 loss_buffer = LossBuffer(size=len(val_loader))
 model.output = {}
@@ -41,5 +42,7 @@ for i, data in enumerate(tqdm.tqdm(val_loader, desc='Test', total=len(val_loader
     model.test(compute_loss=True)
     loss_buffer.add(model.get_current_errors())
 
-test_error = loss_buffer.get_errors()
-visualizer.print_error(test_error)
+errors = loss_buffer.get_errors()
+info = OrderedDict([('model_id', opt.id), ('epoch', opt.which_epoch)])
+log_str = visualizer.log(info, errors, log_in_file=False)
+print(log_str)

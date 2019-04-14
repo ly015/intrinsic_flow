@@ -4,14 +4,16 @@ import torch
 from data.data_loader import CreateDataLoader
 from models.flow_regression_model import FlowRegressionModel
 from options.flow_regression_options import TrainFlowRegressionOptions
-from util.visualizer import FlowVisualizer
+from util.visualizer import Visualizer
 from util.loss_buffer import LossBuffer
+from collections import OrderedDict
 
 import util.io as io
 import os
 import sys
 import numpy as np
 import tqdm
+import time
 
 # parse and store options
 parser = TrainFlowRegressionOptions()
@@ -26,7 +28,7 @@ io.save_str_list([' '.join(sys.argv)], os.path.join(model.save_dir, 'order_line.
 train_loader = CreateDataLoader(opt, split='train')
 val_loader = CreateDataLoader(opt, split='test')
 # create visualizer
-visualizer = FlowVisualizer(opt)
+visualizer = Visualizer(opt)
 
 
 # set "saving best"
@@ -56,13 +58,13 @@ for epoch in tqdm.trange(epoch_count, opt.niter+opt.niter_decay+1, desc='Epoch')
         
         if total_steps % opt.display_freq == 0:
             train_error = model.get_current_errors()
-            tqdm.tqdm.write(visualizer.print_train_error(
-                iter_num = total_steps,
-                epoch = epoch, 
-                num_batch = len(train_loader), 
-                lr = model.optimizers[0].param_groups[0]['lr'], 
-                errors = train_error))
-        
+            info = OrderedDict([
+                ('id', opt.id),
+                ('iter', total_steps),
+                ('epoch', epoch),
+                ('lr', model.optimize_parameters[0].param_groups[0]['lr']),
+            ])
+            tqdm.tqmd.write(visualizer.log(info, train_error))
     if epoch % opt.test_epoch_freq == 0:
         # model.get_current_errors() #erase training error information
         model.output = {}
@@ -73,13 +75,21 @@ for epoch in tqdm.trange(epoch_count, opt.niter+opt.niter_decay+1, desc='Epoch')
             model.test(compute_loss=True)
             loss_buffer.add(model.get_current_errors())
         test_error = loss_buffer.get_errors()
-        tqdm.tqdm.write(visualizer.print_test_error(iter_num=total_steps, epoch=epoch, errors=test_error))
+        info = OrderedDict([
+                ('time', time.ctime()),
+                ('id', opt.id),
+                ('epoch', epoch),
+        ])
+        tqdm.tqdm.write(visualizer.log(info, test_error))
+        
         # save best
         if best_info['best_epoch']==-1 or (test_error[best_info['meas']].item()<best_info['best_value'] and best_info['type']=='min') or (test_error[best_info['meas']].item()>best_info['best_value'] and best_info['type']=='max'):
             best_info['best_epoch'] = epoch
             best_info['best_value'] = test_error[best_info['meas']].item()
             model.save('best')
-        tqdm.tqdm.write(str(best_info))
+        best_info = str(best_info)
+        tqdm.tqdm.write()
+        visualizer.log(best_info)
     
     if epoch % opt.vis_epoch_freq == 0:
         model.eval()
@@ -97,7 +107,8 @@ for epoch in tqdm.trange(epoch_count, opt.niter+opt.niter_decay+1, desc='Epoch')
                 for name, item in v.iteritems():
                     visuals[name][0] = torch.cat((visuals[name][0], item[0]), dim=0)
         tqdm.tqdm.write('visualizing training sample')
-        visualizer.visualize_image(epoch=epoch, subset='train', visuals=visuals)
+        fn_vis = os.path.join('checkpoints', opt.id, 'vis', 'train_epoch%d.jpg'%epoch)
+        visualizer.visualize_results(visuals, fn_vis)
 
         visuals = None
         for i, data in enumerate(val_loader):
@@ -112,7 +123,8 @@ for epoch in tqdm.trange(epoch_count, opt.niter+opt.niter_decay+1, desc='Epoch')
                 for name, item in v.iteritems():
                     visuals[name][0] = torch.cat((visuals[name][0], item[0]), dim=0)
         tqdm.tqdm.write('visualizing test sample')
-        visualizer.visualize_image(epoch=epoch, subset='test', visuals=visuals)
+        fn_vis = os.path.join('checkpoints', opt.id, 'vis', 'test_epoch%d.jpg'%epoch)
+        visualizer.visualize_results(visuals, fn_vis)
     
     if epoch % opt.save_epoch_freq == 0:
         model.save(epoch)

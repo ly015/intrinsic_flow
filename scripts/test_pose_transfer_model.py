@@ -4,7 +4,7 @@ import torch
 from data.data_loader import CreateDataLoader
 from models.pose_transfer_model import PoseTransferModel
 from options.pose_transfer_options import TestPoseTransferOptions
-from util.visualizer import FlowVisualizer
+from util.visualizer import Visualizer
 from util.loss_buffer import LossBuffer
 
 import util.io as io
@@ -31,7 +31,7 @@ model.initialize(opt)
 # create data loader
 val_loader = CreateDataLoader(opt, split=opt.data_split)
 # create visualizer
-visualizer = FlowVisualizer(opt)
+visualizer = Visualizer(opt)
 
 # visualize
 if opt.n_vis > 0:
@@ -49,8 +49,9 @@ if opt.n_vis > 0:
         else:
             for name, v in visuals.iteritems():
                 val_visuals[name][0] = torch.cat((val_visuals[name][0], v[0]),dim=0)
-    visualizer.visualize_image(epoch=opt.which_epoch, subset='test', visuals=val_visuals)
-    print('done visualization.')
+    
+    fn_vis = os.path.join('checkpoints', opt.id, 'vis', 'test_epoch%s.jpg'%opt.which_epoch)
+    visualizer.visualize_image(visuals, fn_vis)
 
 # test
 n_test_batch = len(val_loader) if opt.n_test_batch == -1 else opt.n_test_batch
@@ -82,4 +83,7 @@ if n_test_batch > 0:
 
     test_error = loss_buffer.get_errors()
     test_error['sec per image'] = total_time/(opt.batch_size*n_test_batch)
-    visualizer.print_error(test_error)
+    info = OrderedDict([('model_id', opt.id), ('epoch', opt.which_epoch)])
+    log_str = visualizer.log(info, errors, log_in_file=False)
+    print(log_str)
+
