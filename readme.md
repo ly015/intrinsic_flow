@@ -1,6 +1,6 @@
 # Dense Intrinsic Appearance Flow for Human Pose Transfer
 
-This is a pytorch implementation of the CVPR 2019 paper [Dense Intrinsic Appearance Flow for Human Pose Transfer] (http://mmlab.ie.cuhk.edu.hk/projects/pose-transfer/).
+This is a pytorch implementation of the CVPR 2019 paper [Dense Intrinsic Appearance Flow for Human Pose Transfer](http://mmlab.ie.cuhk.edu.hk/projects/pose-transfer/).
 
 ![fig_intro](imgs/fig_intro.png)
 
@@ -27,8 +27,8 @@ bash scripts/download_deepfashion.sh
 bash scripts/download_market1501.sh
 ```
 Or manually download them from the following links:
-- DeepFashion (23GB): [Google Drive] (https://drive.google.com/file/d/1LbibHhhF7xA7G3hHoHj9I-MvCByzdkvr/view?usp=sharing)
-- Market-1501 (9GB): [Google Drive] (https://drive.google.com/file/d/16zZJ5f5qOJcgg-cPfmAdso8al-MSWiwu/view?usp=sharing)
+- DeepFashion (23GB): [Google Drive](https://drive.google.com/file/d/1LbibHhhF7xA7G3hHoHj9I-MvCByzdkvr/view?usp=sharing)
+- Market-1501 (9GB): [Google Drive](https://drive.google.com/file/d/16zZJ5f5qOJcgg-cPfmAdso8al-MSWiwu/view?usp=sharing)
 
 ### Pretrained Models
 Download pretrained models with the following scripts:
