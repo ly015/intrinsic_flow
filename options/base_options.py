@@ -80,7 +80,7 @@ class BaseOptions(object):
             if self.opt.is_train:
                 fn = os.path.join(expr_dir, 'train_opt.json')
             else:
-                fn = os.path.join(expr_dir, 'test_opt.join')
+                fn = os.path.join(expr_dir, 'test_opt.json')
         io.save_json(vars(self.opt), fn)
 
     def load(self, fn):

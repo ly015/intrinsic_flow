@@ -96,7 +96,7 @@ class Visualizer(object):
             self.log_file.close()
     
     def _open_log_file(self):
-        fn = 'train_log.txt' is self.opt.is_train else 'test_log.txt'
+        fn = 'train_log.txt' if self.opt.is_train else 'test_log.txt'
         self.log_file = open(os.path.join(self.exp_dir, fn), 'w')
         print(time.ctime(), file=self.log_file)
         print('pytorch version: %s' % torch.__version__, file=self.log_file)
@@ -126,9 +126,9 @@ class Visualizer(object):
         return log_str
     
     def visualize_results(self, visuals, filename):
-        io.mkdir_if_missing(os.dirname(filename))
+        io.mkdir_if_missing(os.path.dirname(filename))
         imgs, vis_item_list = merge_visual(visuals)
-        torchvision.utils.save_images(imgs, filename, nrow=len(visuals), normalize=True)
+        torchvision.utils.save_image(imgs, filename, nrow=len(visuals), normalize=True)
         fn_list = os.path.join(os.path.dirname(filename), 'vis_item_list.txt')
         io.save_str_list(vis_item_list, fn_list)
 

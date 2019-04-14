@@ -14,13 +14,14 @@ import numpy as np
 import tqdm
 import cv2
 import time
+from collections import OrderedDict
 
 parser = TestPoseTransferOptions()
 opt = parser.parse()
 parser.save()
 print('load training options.')
 train_opt = io.load_json(os.path.join('checkpoints', opt.id, 'train_opt.json'))
-preserved_opt = {'gpu_ids', 'is_train', 'batch_size', 'which_epoch', 'n_vis'}
+preserved_opt = {'gpu_ids', 'is_train', 'batch_size', 'which_epoch', 'n_vis', 'debug'}
 for k, v in train_opt.iteritems():
     if k in opt and (k not in preserved_opt):
         setattr(opt, k, v)

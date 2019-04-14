@@ -48,7 +48,7 @@ else:
     total_steps = len(train_loader)*last_epoch
     epoch_count = 1 + last_epoch
 
-for epoch in tqdm.trange(epoch_count, opt.niter+opt.niter_decay+1, desc='Epoch'):
+for epoch in tqdm.trange(epoch_count, opt.n_epoch+opt.n_epoch_decay+1, desc='Epoch'):
     model.update_learning_rate()
     model.train()
     for i,data in enumerate(tqdm.tqdm(train_loader, desc='Train')):
@@ -62,9 +62,9 @@ for epoch in tqdm.trange(epoch_count, opt.niter+opt.niter_decay+1, desc='Epoch')
                 ('id', opt.id),
                 ('iter', total_steps),
                 ('epoch', epoch),
-                ('lr', model.optimize_parameters[0].param_groups[0]['lr']),
+                ('lr', model.optimizers[0].param_groups[0]['lr']),
             ])
-            tqdm.tqmd.write(visualizer.log(info, train_error))
+            tqdm.tqdm.write(visualizer.log(info, train_error))
     if epoch % opt.test_epoch_freq == 0:
         # model.get_current_errors() #erase training error information
         model.output = {}
@@ -87,13 +87,11 @@ for epoch in tqdm.trange(epoch_count, opt.niter+opt.niter_decay+1, desc='Epoch')
             best_info['best_epoch'] = epoch
             best_info['best_value'] = test_error[best_info['meas']].item()
             model.save('best')
-        best_info = str(best_info)
-        tqdm.tqdm.write()
-        visualizer.log(best_info)
+        tqdm.tqdm.write(visualizer.log(best_info))
     
     if epoch % opt.vis_epoch_freq == 0:
         model.eval()
-        num_vis_batch = int(1.*opt.nvis/opt.batch_size)
+        num_vis_batch = int(1.*opt.n_vis/opt.batch_size)
         visuals = None
         for i, data in enumerate(train_loader):
             if i == num_vis_batch:

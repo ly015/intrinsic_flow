@@ -19,7 +19,7 @@ opt = parser.parse()
 parser.save()
 print('load training options.')
 train_opt = io.load_json(os.path.join('checkpoints', opt.id, 'train_opt.json'))
-preserved_opt = {'gpu_ids', 'is_train', 'batch_size', 'which_epoch'}
+preserved_opt = {'gpu_ids', 'is_train', 'batch_size', 'which_epoch', 'debug'}
 for k, v in train_opt.iteritems():
     if k in opt and (k not in preserved_opt):
         setattr(opt, k, v)
