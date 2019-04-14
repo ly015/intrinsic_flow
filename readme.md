@@ -8,6 +8,7 @@ This is a pytorch implementation of the CVPR 2019 paper [Dense Intrinsic Appeara
 - python 2.7
 - pytorch (0.4.0)
 - numpy
+- opencv
 - scikit-image
 - tqdm
 
@@ -15,3 +16,9 @@ Install dependencies:
 ```
 pip install -r requirements.txt
 ```
+
+## Resources
+
+### Datasets
+
+### Pretrained Models
