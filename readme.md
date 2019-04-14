@@ -24,35 +24,46 @@ pip install -r requirements.txt
 Download and unzip preprocessed datasets with the following scripts:
 ```
 ```
-Or manually download them from the following links.
-- DeepFashion ()
+Or manually download them from the following links:
+- DeepFashion (23GB)
 - Market-1501 (9GB)
 
 ### Pretrained Models
 Download pretrained models with the following scripts:
-'''
-'''
+```
+```
 
 ## Testing
 ### DeepFashion
 1. Run scripts/test_pose_transfer.py to generate images and compute SSIM score.
-'''
+```
 python scripts/test_pose_transfer.py --gpu_ids 0 --id 0.5 --which_epoch best --save_output
-'''
+```
 2. Compute inception score with the following script:
-'''
+```
 # python scripts/inception_score.py image_dir gpu_ids
 python scripts/inception_score.py checkpoints/PoseTransfer_0.5/output/ 0
-'''
+```
 3. Compute fashionIS and AttrRec-k with the following scripts:
-'''
+```
 # FashionIS
-python 
-'''
+python scripts/fashion_inception_score.py --test_dir checkpoints/PoseTransfer_0.5/output/
+# AttrRec-k
+python scripts/fashion_attribute_score.py --test_dir checkpoints/PoseTransfer_0.5/output/
+```
 ### Market-1501
 
 ## Training
+Coming soon.
 
+## Citation
+```
+@inproceedings{li2019dense,
+  author = {Li, Yining and Huang, Chen and Loy, Chen Change},
+  title = {Dense Intrinsic Appearance Flow for Human Pose Transfer},
+  booktitle = {IEEE Conference on Computer Vision and Pattern Recognition},
+  year = {2019}}
+```
 
 
 
