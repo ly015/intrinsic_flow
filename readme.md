@@ -2,7 +2,7 @@
 
 This is a pytorch implementation of the CVPR 2019 paper [Dense Intrinsic Appearance Flow for Human Pose Transfer] (http://mmlab.ie.cuhk.edu.hk/projects/pose-transfer/).
 
-![fig_intro](imgs/fig_intro.jpg)
+![fig_intro](imgs/fig_intro.png)
 
 ## Requirements
 - python 2.7
