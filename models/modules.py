@@ -217,7 +217,7 @@ class CalcGradNorm(object):
 
 
 ###############################################################################
-# losses
+# Losses and metrics
 ###############################################################################
 class GANLoss(nn.Module):
     def __init__(self, use_lsgan=True, target_real_label=1.0, target_fake_label=0.0):
@@ -461,7 +461,101 @@ class SS_FlowLoss(nn.Module):
         elif self.loss_type == 'l2':
             loss = err.norm(p=2,dim=1).mean()
         return loss
-    
+
+
+class MeanAP():
+    '''
+    compute meanAP
+    '''
+
+    def __init__(self):
+        self.clear()
+
+    def clear(self):
+        self.score = None
+        self.label = None
+
+    def add(self, new_score, new_label):
+
+        inputs = [new_score, new_label]
+
+        for i in range(len(inputs)):
+
+            if isinstance(inputs[i], list):
+                inputs[i] = np.array(inputs[i], dtype = np.float32)
+
+            elif isinstance(inputs[i], np.ndarray):
+                inputs[i] = inputs[i].astype(np.float32)
+
+            elif isinstance(inputs[i], torch.Tensor):
+                inputs[i] = inputs[i].cpu().numpy().astype(np.float32)
+
+            elif isinstance(inputs[i], Variable):
+                inputs[i] = inputs[i].data.cpu().numpy().astype(np.float32)
+
+        new_score, new_label = inputs
+        assert new_score.shape == new_label.shape, 'shape mismatch: %s vs. %s' % (new_score.shape, new_label.shape)
+
+        self.score = np.concatenate((self.score, new_score), axis = 0) if self.score is not None else new_score
+        self.label = np.concatenate((self.label, new_label), axis = 0) if self.label is not None else new_label
+
+    def compute_mean_ap(self):
+
+        score, label = self.score, self.label
+
+        assert score is not None and label is not None
+        assert score.shape == label.shape, 'shape mismatch: %s vs. %s' % (score.shape, label.shape)
+        assert(score.ndim == 2)
+        M, N = score.shape[0], score.shape[1]
+
+        # compute tp: column n in tp is the n-th class label in descending order of the sample score.
+        index = np.argsort(score, axis = 0)[::-1, :]
+        tp = label.copy().astype(np.float)
+        for i in xrange(N):
+            tp[:, i] = tp[index[:,i], i]
+        tp = tp.cumsum(axis = 0)
+
+        m_grid, n_grid = np.meshgrid(range(M), range(N), indexing = 'ij')
+        tp_add_fp = m_grid + 1    
+        num_truths = np.sum(label, axis = 0)
+        # compute recall and precise
+        rec = tp / num_truths
+        prec = tp / tp_add_fp
+
+        prec = np.append(np.zeros((1,N), dtype = np.float), prec, axis = 0)
+        for i in xrange(M-1, -1, -1):
+            prec[i, :] = np.max(prec[i:i+2, :], axis = 0)
+        rec_1 = np.append(np.zeros((1,N), dtype = np.float), rec, axis = 0)
+        rec_2 = np.append(rec, np.ones((1,N), dtype = np.float), axis = 0)
+        AP = np.sum(prec * (rec_2 - rec_1), axis = 0)
+        AP[np.isnan(AP)] = -1 # avoid error caused by classes that have no positive sample
+
+        assert((AP <= 1).all())
+
+        AP = AP * 100.
+        meanAP = AP[AP >= 0].mean()
+
+        return meanAP, AP
+
+    def compute_recall(self, k = 3):
+        '''
+        compute recall using method in DeepFashion Paper
+        '''
+        score, label = self.score, self.label
+        tag = np.where((-score).argsort().argsort() < k, 1, 0)
+        tag_rec = tag * label
+
+        count_rec = tag_rec.sum(axis = 1)
+        count_gt = label.sum(axis = 1)
+
+        # set recall=1 for sample with no positive attribute label
+        no_pos_attr = (count_gt == 0).astype(count_gt.dtype)
+        count_rec += no_pos_attr
+        count_gt += no_pos_attr
+
+        rec = (count_rec / count_gt).mean() * 100.
+
+        return rec
 
 ###############################################################################
 # image similarity metrics
