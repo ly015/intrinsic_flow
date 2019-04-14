@@ -7,7 +7,6 @@ import os
 import time
 import util.io as io
 import util.image as image
-from util.pavi import PaviClient
 from options.base_options import opt_to_str
 import numpy as np
 from collections import OrderedDict
