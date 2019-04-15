@@ -94,19 +94,19 @@ class BasePoseTransferOptions(BaseOptions):
             opt.data_root = 'datasets/market1501'
             opt.fn_split = 'Label/pair_split.json'
             opt.img_dir = 'Images/img/'
-            opt.seg_dir = 'Images/silhouette6/'
+            opt.seg_dir = 'Images/seg/'
             opt.fn_poes = 'Label/pose_label.pkl'
             opt.corr_dir = '3d/hmr/corr/'
 
             opt.pretrained_flow_id = 'Flow3d_m1.0.0'
             
         else:
-            opt.data_root = 'datasets/DF_Pose/'
-            opt.fn_split = 'Label/pair_split_dfm_new.json'
+            opt.data_root = 'datasets/deepfashion/'
+            opt.fn_split = 'Label/pair_split.json'
             opt.img_dir = 'Img/img/'
-            opt.seg_dir = 'Img/silhouette6/'
-            opt.fn_pose = 'Label/pose_label_dfm.pkl' # joint coordinates detected by openpose
-            opt.corr_dir = '3d/hmr_dfm_v2/corr/'
+            opt.seg_dir = 'Img/seg/'
+            opt.fn_pose = 'Label/pose_label.pkl' # joint coordinates detected by openpose
+            opt.corr_dir = '3d/hmr/corr/'
 
 
     
@@ -171,5 +171,6 @@ class TestPoseTransferOptions(BasePoseTransferOptions):
         # save generated images
         parser.add_argument('--save_output', action='store_true', help='save output images in the folder exp_dir/test/')
         parser.add_argument('--output_dir', type=str, default='output', help='path to save generated images')
+        parser.add_argument('--masked', action='store_true', help='also test masked-ssim (for market-1501)')
         
         

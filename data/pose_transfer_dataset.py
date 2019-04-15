@@ -38,8 +38,14 @@ class PoseTransferDataset(BaseDataset):
         self.pil_to_tensor = transforms.ToTensor()
         self.color_jitter = transforms.ColorJitter(brightness=0.0, contrast=0.0, saturation=0.0, hue=0.2)
     
+    def set_len(self, n):
+        self._len = n
+
     def __len__(self):
-        return len(self.id_list)
+        if hasattr(self, '_len') and self._len > 0:
+            return self._len
+        else:
+            return len(self.id_list)
     
     def to_tensor(self, np_data):
         return torch.Tensor(np_data.transpose((2,0,1)))

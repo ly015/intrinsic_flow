@@ -25,8 +25,6 @@ def CreateDataset(opt, split):
         from data.flow_dataset import FlowDataset as DatasetClass
     elif opt.dataset_type == 'pose_transfer':
         from data.pose_transfer_dataset import PoseTransferDataset as DatasetClass
-    elif opt.dataset_type == 'general_pair':
-        from data.general_pair_dataset import GeneralPairDataset as DatasetClass
     else:
         raise ValueError('Dataset mode [%s] not recognized.' % opt.dataset_type)
     

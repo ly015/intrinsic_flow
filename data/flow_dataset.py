@@ -39,8 +39,14 @@ class FlowDataset(BaseDataset):
             self.id_list = self.id_list[0:32]
         self.tensor_normalize_std = transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
     
+    def set_len(self, n):
+        self._len = n
+
     def __len__(self):
-        return len(self.id_list)
+        if hasattr(self, '_len') and self._len > 0:
+            return self._len
+        else:
+            return len(self.id_list)
     
     def to_tensor(self, img):
         return torch.Tensor(img.transpose((2,0,1)))

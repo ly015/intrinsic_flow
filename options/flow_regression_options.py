@@ -65,18 +65,18 @@ class BaseFlowRegressionOptions(BaseOptions):
             opt.aug_shifty_range = 5
             opt.data_root = 'datasets/market1501/'
             opt.img_dir = 'Images/img/'
-            opt.seg_dir = 'Images/silhouette6/'
+            opt.seg_dir = 'Images/seg/'
             opt.fn_pose = 'Label/pose_label.pkl'
             opt.fn_split = 'Label/pair_split.json'
             opt.corr_dir = '3d/hmr/corr/'
         else:
             opt.image_size = [256,256]
-            opt.data_root = 'datasets/DF_Pose/'
+            opt.data_root = 'datasets/deepfashion/'
             opt.img_dir = 'Img/img/'
-            opt.seg_dir = 'Img/silhouette6/'
-            opt.fn_pose = 'Label/pose_label_hmr_adapt.pkl'
-            opt.fn_split = 'Label/pair_split_dfm_new_clean.json'
-            opt.corr_dir = '3d/hmr_dfm_v2/corr/'
+            opt.seg_dir = 'Img/seg/'
+            opt.fn_pose = 'Label/pose_label_adapt.pkl'
+            opt.fn_split = 'Label/pair_split_clean.json'
+            opt.corr_dir = '3d/hmr/corr/'
                     
 
 class TrainFlowRegressionOptions(BaseFlowRegressionOptions):
@@ -108,7 +108,7 @@ class TrainFlowRegressionOptions(BaseFlowRegressionOptions):
         parser.add_argument('--save_epoch_freq', type = int, default = 5, help='every # epoch save current model weights' )
         parser.add_argument('--vis_epoch_freq', type = int, default = 1, help='every # epoch visualize result in exp_dir/vis/')
         parser.add_argument('--check_grad_freq', type = int, default = 100, help = 'every # iteration check each loss gradients')
-        parser.add_argument('--nvis', type = int, default = 64, help='number of visulazition samples')
+        parser.add_argument('--n_vis', type = int, default = 64, help='number of visulazition samples')
         # loss setting
         parser.add_argument('--loss_weight_flow', type=float, default=1., help='weight of multiscale flow loss. see models.modules.MultiScaleFlowLoss')
         parser.add_argument('--loss_weight_vis', type=float, default=1., help='weight of visibility loss')

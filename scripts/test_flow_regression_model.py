@@ -15,7 +15,7 @@ import tqdm
 from collections import OrderedDict
 
 parser = TestFlowRegressionOptions()
-opt = parser.parse()
+opt = parser.parse(display=False)
 parser.save()
 print('load training options.')
 train_opt = io.load_json(os.path.join('checkpoints', opt.id, 'train_opt.json'))
@@ -35,9 +35,7 @@ loss_buffer = LossBuffer(size=len(val_loader))
 model.output = {}
 model.eval()
 
-for i, data in enumerate(tqdm.tqdm(val_loader, desc='Test', total=len(val_loader))):
-    if i == len(val_loader):
-        break
+for i, data in enumerate(tqdm.tqdm(val_loader, desc='Test')):
     model.set_input(data)
     model.test(compute_loss=True)
     loss_buffer.add(model.get_current_errors())

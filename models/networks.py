@@ -634,8 +634,8 @@ class FlowUnet(nn.Module):
             feat_out, x_pyr, flow_pyr = self.unet_block(x)
             vis = self.predict_vis(feat_out)
 
-            flow_out = F.upsample(flow_pyr[0], scale_factor=self.start_scale, mode='bilinear')
-            vis = F.upsample(vis, scale_factor=self.start_scale, mode='bilinear')
+            flow_out = F.upsample(flow_pyr[0], scale_factor=self.start_scale, mode='bilinear', align_corners=False)
+            vis = F.upsample(vis, scale_factor=self.start_scale, mode='bilinear', align_corners=False)
             return flow_out, vis, flow_pyr, feat_out
 
 
@@ -733,8 +733,8 @@ class FlowUnet_v2(nn.Module):
                 flow_pyr = [self.__getattr__('pred_flow_%d'%l)(x)] + flow_pyr
             
             feat_out = x
-            flow_out = F.upsample(flow_pyr[0], scale_factor=self.start_scale, mode='bilinear')
-            vis_out = F.upsample(self.pred_vis(x), scale_factor=self.start_scale, mode='bilinear')
+            flow_out = F.upsample(flow_pyr[0], scale_factor=self.start_scale, mode='bilinear', align_corners=False)
+            vis_out = F.upsample(self.pred_vis(x), scale_factor=self.start_scale, mode='bilinear', align_corners=False)
             
             return flow_out, vis_out, flow_pyr, feat_out
 

@@ -17,7 +17,7 @@ import time
 from collections import OrderedDict
 
 parser = TestPoseTransferOptions()
-opt = parser.parse()
+opt = parser.parse(display=False)
 parser.save()
 print('load training options.')
 train_opt = io.load_json(os.path.join('checkpoints', opt.id, 'train_opt.json'))
@@ -37,11 +37,10 @@ visualizer = Visualizer(opt)
 # visualize
 if opt.n_vis > 0:
     print('visualizing first %d samples'%opt.n_vis)
-    num_vis_batch = int(np.ceil(1.0*opt.n_vis/opt.batch_size))
+    num_vis_batch = min(int(np.ceil(1.0*opt.n_vis/opt.batch_size)), len(val_loader))
+    val_loader.dataset.set_len(num_vis_batch*opt.batch_size)
     val_visuals = None
-    for i, data in enumerate(tqdm.tqdm(val_loader, desc='Visualize', total=num_vis_batch)):
-        if i == num_vis_batch:
-            break
+    for i, data in enumerate(tqdm.tqdm(val_loader, desc='Visualize')):
         model.set_input(data)
         model.test(compute_loss=False)
         visuals = model.get_current_visuals()
@@ -52,21 +51,19 @@ if opt.n_vis > 0:
                 val_visuals[name][0] = torch.cat((val_visuals[name][0], v[0]),dim=0)
     
     fn_vis = os.path.join('checkpoints', opt.id, 'vis', 'test_epoch%s.jpg'%opt.which_epoch)
-    visualizer.visualize_image(visuals, fn_vis)
+    visualizer.visualize_results(val_visuals, fn_vis)
 
 # test
-n_test_batch = len(val_loader) if opt.n_test_batch == -1 else opt.n_test_batch
-if n_test_batch > 0:
-    loss_buffer = LossBuffer(size=n_test_batch)
+if opt.n_test_batch != 0:
+    val_loader.dataset.set_len(opt.n_test_batch*opt.batch_size)
+    loss_buffer = LossBuffer(size=len(val_loader))
     model.output = {}
     if opt.save_output:
         output_dir = os.path.join(model.save_dir, opt.output_dir)
         io.mkdir_if_missing(output_dir)
 
     total_time = 0
-    for i, data in enumerate(tqdm.tqdm(val_loader, desc='Test', total=n_test_batch)):
-        if i == n_test_batch:
-            break
+    for i, data in enumerate(tqdm.tqdm(val_loader, desc='Test')):
         tic = time.time()
         model.set_input(data)
         model.test(compute_loss=True, meas_only=True)
@@ -83,8 +80,8 @@ if n_test_batch > 0:
                 cv2.imwrite(os.path.join(output_dir, '%s_%s.jpg'%(sid1, sid2)), img)
 
     test_error = loss_buffer.get_errors()
-    test_error['sec per image'] = total_time/(opt.batch_size*n_test_batch)
+    test_error['sec_per_image'] = total_time/(opt.batch_size*len(val_loader))
     info = OrderedDict([('model_id', opt.id), ('epoch', opt.which_epoch)])
-    log_str = visualizer.log(info, errors, log_in_file=False)
+    log_str = visualizer.log(info, test_error, log_in_file=False)
     print(log_str)
 

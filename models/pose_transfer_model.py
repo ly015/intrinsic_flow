@@ -33,7 +33,7 @@ class PoseTransferModel(BaseModel):
                 n_residual_blocks = 2,
                 norm = opt.G_norm,
                 activation = nn.LeakyReLU(0.1) if opt.G_activation=='leaky_relu' else nn.ReLU(),
-                use_dropout = False,
+                use_dropout = opt.use_dropout,
                 gpu_ids = opt.gpu_ids
             )
         elif opt.which_model_G == 'dual_unet':
@@ -50,7 +50,7 @@ class PoseTransferModel(BaseModel):
                 norm = opt.G_norm,
                 vis_mode = opt.G_vis_mode,
                 activation = nn.LeakyReLU(0.1) if opt.G_activation=='leaky_relu' else nn.ReLU(),
-                use_dropout = False,
+                use_dropout = opt.use_dropout,
                 no_end_norm = opt.G_no_end_norm,
                 gpu_ids = opt.gpu_ids,
             )
