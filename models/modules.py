@@ -519,8 +519,8 @@ class MeanAP():
         tp_add_fp = m_grid + 1    
         num_truths = np.sum(label, axis = 0)
         # compute recall and precise
-        rec = tp / num_truths
-        prec = tp / tp_add_fp
+        rec = tp / (num_truths+1e-8)
+        prec = tp / (tp_add_fp+1e-8)
 
         prec = np.append(np.zeros((1,N), dtype = np.float), prec, axis = 0)
         for i in xrange(M-1, -1, -1):
