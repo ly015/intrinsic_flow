@@ -2,35 +2,6 @@ import numpy as np
 from skimage.draw import circle, line_aa, polygon
 from skimage.morphology import dilation, erosion, square
 
-joint2idx = {
-    'nose': 0,
-    'neck': 1,
-    'rshoulder':2,
-    'relbow': 3,
-    'rwrist': 4,
-    'lshoulder': 5,
-    'lelbow': 6,
-    'lwrist': 7,
-    'rhip': 8,
-    'rknee': 9,
-    'rankle': 10,
-    'lhip': 11,
-    'lknee': 12,
-    'lankle': 13,
-    'reye': 14,
-    'leye': 15,
-    'rear': 16,
-    'lear': 17,
-}
-
-def get_joint_coord(label, joint_list):
-    indices = [joint2idx[j] for j in joint_list]
-    if isinstance(label, list):
-        label = np.float32(label)
-    return label[indices, :]
-
-
-
 ##############################################################################################
 # Derived from Deformable GAN (https://github.com/AliaksandrSiarohin/pose-gan)
 ##############################################################################################
@@ -97,31 +68,6 @@ def draw_pose_from_map(pose_map, threshold=0.1, radius=2, draw_joints=True):
     img_size = pose_map.shape[0:2]
     coords = map_to_coords(pose_map, threshold)
     return draw_pose_from_coords(coords, img_size, radius, draw_joints)
-
-
-def relative_scale_from_pose(pose, pose_std, skeleton_def=None):
-    if skeleton_def is None:
-        skeleton_def = [(2,3), (5,6), (2,8), (5,11)]
-    scale = []
-    for t1, t2 in skeleton_def:
-        if np.all([pose[t1]>=0, pose[t2]>=0, pose_std[t1]>=0, pose_std[t2]>=0]):
-            s = np.linalg.norm(pose[t1]-pose[t2]) / np.linalg.norm(pose_std[t1]-pose_std[t2])
-            scale.append(s)
-    if scale:
-        return np.mean(scale)
-    else:
-        return -1
-
-def relative_vertical_offset_from_pose(pose, pose_std, keypoint_def=None):
-    if keypoint_def is None:
-        keypoint_def = [0,1,2,5,8,11]
-
-    valid = (pose[keypoint_def, 1] >=0) & (pose_std[keypoint_def, 1]>=0)
-    if valid.any():
-        offset = pose[[keypoint_def],1] - pose_std[[keypoint_def], 1]
-        return np.mean(offset[valid])
-    else:
-        return None
 
 def get_pose_mask(pose, img_size, point_radius=4):
     mask = np.zeros(shape=img_size, dtype=bool)
