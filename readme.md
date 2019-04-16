@@ -80,6 +80,7 @@ python scripts/masked_inception_score.py checkpoints/PoseTransfer_m0.5/output/ 0
 python scripts/train_flow_regression_module.py --id id_flow --gpu_ids 0 --which_model unet --dataset_name deepfashion
 ```
 You can alternativelly set `--which_model unet_v2` to use a improved version of network architecture with fewer parameters (only tested on Market-1501).
+
 2. Train human pose transfer models. Set `--pretrained_flow_id` and `--pretrained_flow_epoch` to load the flow regression module. (See all options in ./options/pose_transfer_options.py)
 ```
 # w/o. dual encoder
