@@ -33,7 +33,12 @@ Or manually download them from the following links:
 ### Pretrained Models
 Download pretrained models with the following scripts:
 ```
+bash scripts/download_models.sh
 ```
+These models include:
+| Deepfashion | Market-1501 | Others |
+|---|---|---|
+|`PoseTransfer_0.1` (w/o. dual encoder)<br>`PoseTransfer_0.2` (w/o. flow)<br>`PoseTransfer_0.3` (w/o. vis)<br>`PoseTransfer_0.4` (w/o. pxiel warping)<br>`PoseTransfer_0.5` (full)|`PoseTransfer_m0.1` (w/o. dual encoder)<br>`PoseTransfer_m0.2` (w/o. flow)<br>`PoseTransfer_m0.3` (w/o. vis)<br>`PoseTransfer_m0.4` (w/o. pxiel warping)<br>`PoseTransfer_m0.5` (full)|`Fasion_Inception`(for computing FashionIS)<br>`Fasion_Inception`(for computing AttrRec-k)|
 
 ## Testing
 ### DeepFashion
