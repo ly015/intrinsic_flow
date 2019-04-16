@@ -19,14 +19,13 @@ pip install -r requirements.txt
 ```
 
 ## Resources
-
 #### Datasets
 Download and unzip preprocessed datasets with the following scripts.
 ```
 bash scripts/download_deepfashion.sh
 bash scripts/download_market1501.sh
 ```
-Or manually download them from the following links:
+Or you can manually download them from the following links:
 - DeepFashion (23GB): [Google Drive](https://drive.google.com/file/d/1LbibHhhF7xA7G3hHoHj9I-MvCByzdkvr/view?usp=sharing)
 - Market-1501 (9GB): [Google Drive](https://drive.google.com/file/d/16zZJ5f5qOJcgg-cPfmAdso8al-MSWiwu/view?usp=sharing)
 
@@ -35,7 +34,7 @@ Download pretrained models with the following scripts.
 ```
 bash scripts/download_models.sh
 ```
-Pretrained models below will be downloaded into the folder ./checkpoints. You can manually donwload them [here](https://drive.google.com/file/d/1QHcb1QBGVmGginpsYmer-Q5Aq0HNtBHv/view?usp=sharing).
+Pretrained models below will be downloaded into the folder ./checkpoints. You can manually donwload them from [here](https://drive.google.com/file/d/1QHcb1QBGVmGginpsYmer-Q5Aq0HNtBHv/view?usp=sharing).
 
 | Deepfashion | Market-1501 | Others |
 |-------------|-------------|--------|
@@ -60,6 +59,7 @@ python scripts/fashion_inception_score.py --test_dir checkpoints/PoseTransfer_0.
 # AttrRec-k
 python scripts/fashion_attribute_score.py --test_dir checkpoints/PoseTransfer_0.5/output/
 ```
+
 #### Market-1501
 1. Run scripts/test_pose_transfer.py to generate images and compute SSIM/masked-SSIM score.
 ```
@@ -73,6 +73,7 @@ python scripts/inception_score.py checkpoints/PoseTransfer_m0.5/output/ 0
 # masked-IS (only for market-1501)
 python scripts/masked_inception_score.py checkpoints/PoseTransfer_m0.5/output/ 0
 ```
+
 ## Training
 #### DeepFashion
 1. Train flow regression module. (See all options in ./options/flow_regression_options.py)
@@ -101,6 +102,7 @@ python scripts/train_pose_transfer_model.py --id id_pose_5 --gpu_ids 5 --dataset
 
 #### Market-1501
 Set `--dataset_name market` to train models on Market-1501 dataset. Data related parameters will be automatically adjusted (see `.auto_set()` in ./options/flow_regression_options.py and ./options/pose_transfer_options.py for details).
+
 ## Citation
 ```
 @inproceedings{li2019dense,
