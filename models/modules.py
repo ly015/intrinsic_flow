@@ -562,9 +562,9 @@ class MeanAP():
 ###############################################################################
 class PSNR(nn.Module):
     def forward(self, images_1, images_2):
-        numpy_imgs_1 = images_1.data.cpu().numpy().transpose(0,2,3,1)
+        numpy_imgs_1 = images_1.cpu().numpy().transpose(0,2,3,1)
         numpy_imgs_1 = ((numpy_imgs_1 + 1.0) * 127.5).clip(0,255).astype(np.uint8)
-        numpy_imgs_2 = images_2.data.cpu().numpy().transpose(0,2,3,1)
+        numpy_imgs_2 = images_2.cpu().numpy().transpose(0,2,3,1)
         numpy_imgs_2 = ((numpy_imgs_2 + 1.0) * 127.5).clip(0,255).astype(np.uint8)
 
         psnr_score = []
@@ -575,11 +575,15 @@ class PSNR(nn.Module):
 
 
 class SSIM(nn.Module):
-    def forward(self, images_1, images_2):
-        numpy_imgs_1 = images_1.data.cpu().numpy().transpose(0,2,3,1)
+    def forward(self, images_1, images_2, mask=None):
+        numpy_imgs_1 = images_1.cpu().numpy().transpose(0,2,3,1)
         numpy_imgs_1 = ((numpy_imgs_1 + 1.0) * 127.5).clip(0,255).astype(np.uint8)
-        numpy_imgs_2 = images_2.data.cpu().numpy().transpose(0,2,3,1)
+        numpy_imgs_2 = images_2.cpu().numpy().transpose(0,2,3,1)
         numpy_imgs_2 = ((numpy_imgs_2 + 1.0) * 127.5).clip(0,255).astype(np.uint8)
+        if mask is not None:
+            mask = mask.cpu().numpy().transpose(0,2,3,1).astype(np.uint8)
+            numpy_imgs_1 = numpy_imgs_1 * mask
+            numpy_imgs_2 = numpy_imgs_2 * mask
 
         ssim_score = []
         for img_1, img_2 in zip(numpy_imgs_1, numpy_imgs_2):

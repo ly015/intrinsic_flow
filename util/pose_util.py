@@ -136,7 +136,7 @@ def get_pose_mask(pose, img_size, point_radius=4):
             continue
         norm_vec = pose[f] - pose[t]
         norm_vec = np.array([-norm_vec[1], norm_vec[0]])
-        norm_vec = point_radius * norm_vec / np.linalg.norm(norm_vec)
+        norm_vec = point_radius * norm_vec / np.linalg.norm(norm_vec+1e-8)
         
         vetexes = np.array([
             pose[f] + norm_vec,
@@ -157,3 +157,21 @@ def get_pose_mask(pose, img_size, point_radius=4):
     mask = erosion(mask, square(5))
 
     return mask
+
+def get_pose_mask_batch(pose, img_size, point_radius=4):
+    '''
+    Input:
+        pose (tensor): (N,18,2) key points
+        img_size (tuple): (h, w)
+        point_radius (int): width of skeleton mask
+    Output:
+        mask (tensor): (N, 1, h, w)
+    '''
+    mask = []
+    pose_np = pose.cpu().numpy()
+    for p in pose_np:
+        m = get_pose_mask(p, img_size, point_radius)
+        mask.append(m)
+    mask = np.expand_dims(np.stack(mask), axis=1)
+    mask = mask.astype(np.float32)
+    return pose.new(mask)

@@ -3,13 +3,13 @@ from __future__ import division, print_function
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import os
+from collections import OrderedDict
+import argparse
+
 import networks
 from base_model import BaseModel
-from collections import OrderedDict
-
-import util.io as io
-import os
-import argparse
+from util import io, pose_util
 
 class PoseTransferModel(BaseModel):
     '''
@@ -243,6 +243,9 @@ class PoseTransferModel(BaseModel):
         self.output['PSNR'] = self.crit_psnr(self.output['img_out'], self.output['img_tar'])
         if compute_ssim:
             self.output['SSIM'] = self.crit_ssim(self.output['img_out'], self.output['img_tar'])
+            if (not self.opt.is_train) and self.opt.masked:
+                mask = pose_util.get_pose_mask_batch(pose=self.input['joint_c_2'], img_size=tuple(self.output['img_out'].shape[2:4]))
+                self.output['mask_SSIM'] = self.crit_ssim(self.output['img_out'], self.output['img_tar'], mask)
         if meas_only:
             return
         ##############################
@@ -369,6 +372,7 @@ class PoseTransferModel(BaseModel):
         error_list = [
             'PSNR',
             'SSIM',
+            'mask_SSIM',
             'loss_l1',
             'loss_content',
             'loss_style',
