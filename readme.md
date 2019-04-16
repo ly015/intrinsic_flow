@@ -37,9 +37,14 @@ bash scripts/download_models.sh
 ```
 These models include:
 
+<!---
 | Deepfashion | Market-1501 | Others |
 |-------------|-------------|--------|
-|*`PoseTransfer_0.1` (w/o. dual encoder)<br>*`PoseTransfer_0.2` (w/o. flow)<br>`PoseTransfer_0.3` (w/o. vis)<br>`PoseTransfer_0.4` (w/o. pxiel warping)<br>`PoseTransfer_0.5` (full)|`PoseTransfer_m0.1` (w/o. dual encoder)<br>`PoseTransfer_m0.2` (w/o. flow)<br>`PoseTransfer_m0.3` (w/o. vis)<br>`PoseTransfer_m0.4` (w/o. pxiel warping)<br>`PoseTransfer_m0.5` (full)|`Fasion_Inception`(for computing FashionIS)<br>`Fasion_Inception`(for computing AttrRec-k)|
+|*`PoseTransfer_0.1` (w/o. dual encoder)<br>*`PoseTransfer_0.2` (w/o. flow)<br>`PoseTransfer_0.3` (w/o. vis)<br>`PoseTransfer_0.4` (w/o. pxiel warping)<br>`PoseTransfer_0.5` (full)|`PoseTransfer_m0.1` (w/o. dual encoder)<br>`PoseTransfer_m0.2` (w/o. flow)<br>`PoseTransfer_m0.3` (w/o. vis)<br>`PoseTransfer_m0.4` (w/o. pxiel warping)<br>`PoseTransfer_m0.5` (full)|`Fasion_Inception`(for computing FashionIS)<br>`Fasion_Attr`(for computing AttrRec-k)|
+--->
+| Deepfashion | Market-1501 | Others |
+|-------------|-------------|--------|
+|<ul><li>`PoseTransfer_0.1` (w/o. dual encoder)</li><li>`PoseTransfer_0.2` (w/o. flow)</li><li>`PoseTransfer_0.3` (w/o. vis)</li><li>`PoseTransfer_0.4` (w/o. pxiel warping)</li><li>`PoseTransfer_0.5` (full)</li></ul>|<ul><li>`PoseTransfer_m0.1` (w/o. dual encoder)</li><li>`PoseTransfer_m0.2` (w/o. flow)</li><li>`PoseTransfer_m0.3` (w/o. vis)</li><li>`PoseTransfer_m0.4` (w/o. pxiel warping)</li><li>`PoseTransfer_m0.5` (full)</li></ul>|<ul><li>`Fasion_Inception`(compute FashionIS)</li><li>`Fasion_Attr`(compute AttrRec-k)</li></ul>|
 
 ## Testing
 ### DeepFashion
