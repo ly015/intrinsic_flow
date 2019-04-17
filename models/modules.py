@@ -398,38 +398,35 @@ def L2(input_flow, target_flow, vis_mask):
 
 
 class MultiScaleFlowLoss(nn.Module):
-    def __init__(self, start_scale=2, num_scale=5, loss_type='l1'):
+    '''
+    Derived from NVIDIA/flownet2-pytorch repo.
+    '''
+    def __init__(self, start_scale=2, num_scale=5, l_weight=0.32, loss_type='l1'):
         super(MultiScaleFlowLoss, self).__init__()
         self.start_scale = start_scale
         self.num_scale = num_scale
+        self.loss_weights = [l_weight/(2**scale) for scale in range(self.num_scale)]
         self.loss_type = loss_type
-        self.loss_weights = [0.005, 0.01, 0.02, 0.08, 0.32] + [0.32]*(num_scale-5)
-        self.div_flow = 0.05 # follow flownet and pwc net, but don't konw the reason
+        self.div_flow = 0.05
         self.avg_pools = [nn.AvgPool2d(self.start_scale*(2**scale), self.start_scale*(2**scale)) for scale in range(num_scale)]
         self.max_pools = [nn.MaxPool2d(self.start_scale*(2**scale), self.start_scale*(2**scale)) for scale in range(num_scale)]
         if loss_type == 'l1':
             self.loss_func = L1
         elif loss_type == 'l2':
             self.loss_func = L2
-        
-    def forward(self, input_flows, target_flow, vis_mask, output_full_losses=False):
+    
+    def forward(self, input_flows, target_flow, vis_mask):
         loss = 0
         epe = 0
-        full_losses = []
         target_flow = self.div_flow * target_flow
         for i, input_ in enumerate(input_flows):
             # for pytorch v0.4.0 and earlier
             target_ = self.avg_pools[i](target_flow)
             mask_ = self.max_pools[i](vis_mask)
             assert input_.is_same_size(target_), 'scale %d size mismatch: input(%s) vs. target(%s)' % (i, input_.size(), target_.size())
-            loss_i = self.loss_func(input_, target_, mask_)
-            loss += self.loss_weights[i] * loss_i
+            loss += self.loss_weights[i] * self.loss_func(input_, target_, mask_)
             epe +=  self.loss_weights[i] * EPE(input_, target_, mask_)
-            full_losses = full_losses + [loss_i]
-        if output_full_losses:
-            return loss, epe, full_losses
-        else:
-            return loss, epe
+        return loss, epe
 
 class SS_FlowLoss(nn.Module):
     '''
