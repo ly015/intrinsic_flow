@@ -174,7 +174,7 @@ class PoseTransferModel(BaseModel):
     def forward(self, test=False):
         # generate flow
         flow_scale = 20.
-        if self.opt.flow_on_the_fly or 'flow' in self.opt.data_item_list:
+        if self.opt.flow_on_the_fly or 'flow':
             if self.opt.flow_on_the_fly:
                 with torch.no_grad():
                     input_F = self.get_tensor(self.opt.F_input_type)
