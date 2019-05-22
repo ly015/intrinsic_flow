@@ -97,7 +97,7 @@ python scripts/train_pose_transfer_model.py --id id_pose_3 --gpu_ids 3 --dataset
 python scripts/train_pose_transfer_model.py --id id_pose_4 --gpu_ids 4 --dataset_name deepfashion --which_model_G dual_unet --G_feat_warp 1 --G_vis_mode residual
 
 # full (need a pretrained pose transfer model without pixel warping)
-python scripts/train_pose_transfer_model.py --id id_pose_5 --gpu_ids 5 --dataset_name deepfashion --which_model_G dual_unet --pretrained_G_id id_pose_4 --pretrained_G_epoch 8
+python scripts/train_pose_transfer_model.py --id id_pose_5 --gpu_ids 5 --dataset_name deepfashion --G_pix_warp 1 --which_model_G dual_unet --pretrained_G_id id_pose_4 --pretrained_G_epoch 8
 ```
 
 #### Market-1501
