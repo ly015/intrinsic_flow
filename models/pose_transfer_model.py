@@ -174,28 +174,27 @@ class PoseTransferModel(BaseModel):
     def forward(self, test=False):
         # generate flow
         flow_scale = 20.
-        if self.opt.flow_on_the_fly or 'flow' in self.opt.data_item_list:
-            if self.opt.flow_on_the_fly:
-                with torch.no_grad():
-                    input_F = self.get_tensor(self.opt.F_input_type)
-                    flow_out, vis_out, _, _ = self.netF(input_F)
-                    self.output['vis_out'] = vis_out.argmax(dim=1, keepdim=True).float()
-                    self.output['mask_out'] = (self.output['vis_out']<2).float()
-                    self.output['flow_out'] = flow_out * flow_scale * self.output['mask_out']
-                    self.output['flow_tar'] = self.input['flow_2to1']
-                    self.output['vis_tar'] = self.input['vis_2']
-                    self.output['mask_tar'] = (self.output['vis_tar']<2).float()
-            else:
-                self.output['flow_out'] = self.input['flow_2to1']
-                self.output['vis_out'] = self.input['vis_2']
+        if self.opt.flow_on_the_fly:
+            with torch.no_grad():
+                input_F = self.get_tensor(self.opt.F_input_type)
+                flow_out, vis_out, _, _ = self.netF(input_F)
+                self.output['vis_out'] = vis_out.argmax(dim=1, keepdim=True).float()
                 self.output['mask_out'] = (self.output['vis_out']<2).float()
-                self.output['flow_tar'] = self.output['flow_out']
-                self.output['vis_tar'] = self.output['vis_out']
-                self.output['maks_tar'] = self.output['mask_out']
-            bsz, _, h, w = self.output['vis_out'].size()
-            self.output['vismap_out'] = self.output['vis_out'].new(bsz,3,h,w).scatter_(dim=1, index=self.output['vis_out'].long(), value=1)
-            self.output['vismap_tar'] = self.output['vis_tar'].new(bsz,3,h,w).scatter_(dim=1, index=self.output['vis_tar'].long(), value=1)
-        
+                self.output['flow_out'] = flow_out * flow_scale * self.output['mask_out']
+                self.output['flow_tar'] = self.input['flow_2to1']
+                self.output['vis_tar'] = self.input['vis_2']
+                self.output['mask_tar'] = (self.output['vis_tar']<2).float()
+        else:
+            self.output['flow_out'] = self.input['flow_2to1']
+            self.output['vis_out'] = self.input['vis_2']
+            self.output['mask_out'] = (self.output['vis_out']<2).float()
+            self.output['flow_tar'] = self.output['flow_out']
+            self.output['vis_tar'] = self.output['vis_out']
+            self.output['maks_tar'] = self.output['mask_out']
+        bsz, _, h, w = self.output['vis_out'].size()
+        self.output['vismap_out'] = self.output['vis_out'].new(bsz,3,h,w).scatter_(dim=1, index=self.output['vis_out'].long(), value=1)
+        self.output['vismap_tar'] = self.output['vis_tar'].new(bsz,3,h,w).scatter_(dim=1, index=self.output['vis_tar'].long(), value=1)
+
         # warp image
         self.output['img_warp'] = networks.warp_acc_flow(self.input['img_1'], self.output['flow_out'], mask=self.output['mask_out'])
        
