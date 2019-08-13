@@ -169,7 +169,7 @@ def create_hmr_pose_label_adapt():
     reg = RidgeCV(normalize=False)
     reg.fit(x_train, y_train)
 
-    pts_hmr = np.array(joint_label.values())
+    pts_hmr = np.array(joint_label_hmr.values())
     x_test = pts_hmr[:,[2,5],:].reshape(-1,4)
     y_test = reg.predict(x_test).reshape(-1,2)
 
