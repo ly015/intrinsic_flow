@@ -143,7 +143,8 @@ class PoseTransferDataset(BaseDataset):
             corr_2to1 = cv2.warpAffine(corr_2to1, M, dsize=(w,h), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)
             vis_2 = cv2.warpAffine(vis_2, M, dsize=(w,h), flags=cv2.INTER_NEAREST, borderMode=cv2.BORDER_REPLICATE)
 
-            v = (d[:,0]>=0) & (d[:,1]>=0) & (d[:,0]<w) & (d[:,1]<h)
+            #v = (d[:,0]>=0) & (d[:,1]>=0) & (d[:,0]<w) & (d[:,1]<h)
+            v = (joint_c_2[:,0]>=0) & (joint_c_2[:,1]>=0) & (joint_c_2[:,0]<w) & (joint_c_2[:,1]<h)
             jc = joint_c_2.dot(M[:,0:2].T) + M[:,2:].T
             v_t = (jc[:,0]>=0) & (jc[:,1]>=0) & (jc[:,0]<w) & (jc[:,1]<h)
             v_t = v_t & v
