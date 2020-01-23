@@ -26,15 +26,15 @@ bash scripts/download_deepfashion.sh
 bash scripts/download_market1501.sh
 ```
 Or you can manually download them from the following links:
-- DeepFashion (23GB): [Google Drive](https://drive.google.com/file/d/1LbibHhhF7xA7G3hHoHj9I-MvCByzdkvr/view?usp=sharing)
-- Market-1501 (9GB): [Google Drive](https://drive.google.com/file/d/16zZJ5f5qOJcgg-cPfmAdso8al-MSWiwu/view?usp=sharing)
+- DeepFashion (23GB): [Google Drive](https://drive.google.com/open?id=1_VJh4TlVRMoIgkZSaicgICfye3s5eaVJ)
+- Market-1501 (9GB): [Google Drive](https://drive.google.com/open?id=1p1Jl-U4OTgmiVLUCAdyNjAo3sI56mtHa)
 
 #### Pretrained Models
 Download pretrained models with the following scripts.
 ```
 bash scripts/download_models.sh
 ```
-Pretrained models below will be downloaded into the folder ./checkpoints. You can manually donwload them from [here](https://drive.google.com/file/d/1QHcb1QBGVmGginpsYmer-Q5Aq0HNtBHv/view?usp=sharing).
+Pretrained models below will be downloaded into the folder ./checkpoints. You can manually donwload them from [here](https://drive.google.com/open?id=1eClRS7is1fVTXxelOv5g7ziSGTfuSb1U).
 
 | Deepfashion | Market-1501 | Others |
 |-------------|-------------|--------|
