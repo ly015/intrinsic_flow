@@ -1,6 +1,6 @@
 #!/bin/bash
 
-fileid="1LbibHhhF7xA7G3hHoHj9I-MvCByzdkvr"
+fileid="1_VJh4TlVRMoIgkZSaicgICfye3s5eaVJ"
 filename="deepfashion.tgz"
 cd datasets
 curl -c ./cookie -s -L "https://drive.google.com/uc?export=download&id=${fileid}" > /dev/null
