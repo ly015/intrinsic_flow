@@ -1,6 +1,6 @@
 #!/bin/bash
 
-fileid="16zZJ5f5qOJcgg-cPfmAdso8al-MSWiwu"
+fileid="1p1Jl-U4OTgmiVLUCAdyNjAo3sI56mtHa"
 filename="market1501.tgz"
 cd datasets
 curl -c ./cookie -s -L "https://drive.google.com/uc?export=download&id=${fileid}" > /dev/null
