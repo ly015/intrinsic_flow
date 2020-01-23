@@ -1,6 +1,6 @@
 #!/bin/bash
 
-fileid="1QHcb1QBGVmGginpsYmer-Q5Aq0HNtBHv"
+fileid="1eClRS7is1fVTXxelOv5g7ziSGTfuSb1U"
 filename="pretrained_models.tgz"
 cd checkpoints
 curl -c ./cookie -s -L "https://drive.google.com/uc?export=download&id=${fileid}" > /dev/null
