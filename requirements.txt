@@ -1,5 +1,5 @@
 numpy>=1.14.0
-torch==0.4.0
+torch==2.2.0
 torchvision==0.2.1
 scikit-image>=0.13.1
 tqdm==4.25.0
